@@ -88,6 +88,16 @@
       z-index: 25;
     }
 
+    .event-bar-stack {
+      transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+    }
+    .event-bar-stack:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.12);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      z-index: 30;
+    }
+
     /* 日曜・祝日網掛けパターン */
     .holiday-col-dark {
       background-color: rgba(244, 63, 94, 0.13);
@@ -192,9 +202,9 @@
         </button>
 
         <!-- カレンダー予定(イベント)追加ボタン -->
-        <button type="button" id="btn-add-event" class="px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition flex items-center gap-1 cursor-pointer">
+        <button type="button" id="btn-add-event" class="px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition flex items-center gap-1 cursor-pointer" title="手動の独自メモ予定を追加">
           <span>📅</span>
-          <span>予定管理</span>
+          <span>手動予定</span>
         </button>
 
         <!-- カテゴリー管理ボタン -->
@@ -223,6 +233,11 @@
           <span>日曜・祝日</span>
         </span>
         <span class="opacity-40">|</span>
+        <span class="flex items-center gap-1.5 text-amber-500 font-bold">
+          <span>📅</span>
+          <span>上段: Google予定(自動) ＆ 手動メモ</span>
+        </span>
+        <span class="opacity-40">|</span>
         <span class="font-semibold">工数太さ:</span>
         <span class="flex items-center gap-1"><span class="inline-block w-3.5 h-1.5 rounded bg-slate-500"></span>小(~3h)</span>
         <span class="flex items-center gap-1"><span class="inline-block w-3.5 h-2.5 rounded bg-slate-400"></span>中(4~15h)</span>
@@ -245,15 +260,15 @@
         <div class="w-12 text-right flex-shrink-0">編集</div>
       </div>
 
-      <!-- 最上部固定レーン見出し：カレンダー予定（イベント） -->
+      <!-- 最上部固定レーン見出し：カレンダー予定（イベント） (46px固定高維持) -->
       <div id="left-event-lane-header" class="h-[46px] bg-amber-500/10 border-b border-amber-500/30 px-4 flex items-center justify-between flex-shrink-0">
         <div class="flex items-center gap-2 min-w-0">
           <span class="text-sm">📅</span>
           <span class="text-xs font-extrabold text-amber-600 dark:text-amber-300 truncate">カレンダー予定・拘束イベント</span>
           <span id="event-count-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300">0件</span>
         </div>
-        <button type="button" id="btn-inline-add-event" class="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 flex-shrink-0 cursor-pointer">
-          <span>＋予定追加</span>
+        <button type="button" id="btn-inline-add-event" class="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 flex-shrink-0 cursor-pointer" title="手動の独自メモを追加">
+          <span>＋手動メモ</span>
         </button>
       </div>
 
@@ -268,10 +283,10 @@
           <!-- 2階層日付・期間ヘッダー (h-[56px]) -->
           <div id="timeline-header" style="background-color: var(--g-bg-header); border-color: var(--g-border);" class="sticky top-0 z-20 h-[56px] border-b flex flex-col"></div>
 
-          <!-- 最上部固定レーン：カレンダー予定イベントバー描画帯 (h-[46px]) -->
-          <div id="timeline-event-lane" class="sticky top-[56px] z-20 h-[46px] bg-amber-500/10 backdrop-blur-sm border-b border-amber-500/30 relative flex items-center"></div>
+          <!-- 最上部固定レーン：カレンダー予定イベントバー描画帯 (h-[46px] 固定高ロック) -->
+          <div id="timeline-event-lane" class="sticky top-[56px] z-20 h-[46px] bg-amber-500/10 backdrop-blur-sm border-b border-amber-500/30 relative overflow-hidden"></div>
 
-          <!-- 背景グリッド（土日祝の網掛け含む） -->
+          <!-- 背景グリッド（土日祝の網掛け含む：top-[102px] = 56 + 46 の厳密一致維持） -->
           <div id="timeline-grid-bg" class="absolute top-[102px] left-0 bottom-0 pointer-events-none flex"></div>
 
           <!-- 「今日」の縦ライン -->
@@ -404,12 +419,12 @@
     </div>
   </div>
 
-  <!-- ==================== モーダル：カレンダー予定管理 ==================== -->
+  <!-- ==================== モーダル：手動カレンダー予定管理 ==================== -->
   <div id="event-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-md overflow-hidden">
       <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between">
         <h2 class="text-base font-extrabold text-amber-500 flex items-center gap-2">
-          <span>📅</span><span>カレンダー予定・拘束イベント管理</span>
+          <span>📅</span><span>手動予定・独自メモ管理</span>
         </h2>
         <button type="button" id="btn-close-event-modal" class="opacity-60 hover:opacity-100 p-1 rounded-lg cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -418,28 +433,28 @@
 
       <div class="p-6 space-y-4 text-xs">
         <p class="opacity-70 leading-relaxed">
-          旅行や出張、終日会議などの拘束予定を登録します。ガント最上部の「予定レーン」に表示され、タスク調整の目安になります。
+          Googleカレンダーとは別に、ガントチャート上だけで把握したい拘束予定や仮押さえメモを登録します（※Googleカレンダー側には送信されず安全に共存します）。
         </p>
 
         <form id="event-form" style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="space-y-3 p-3.5 rounded-xl border">
           <div class="flex gap-2">
             <select id="event-icon" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="px-2 py-2 border rounded-lg text-sm">
-              <option value="🚗">🚗 旅行</option>
-              <option value="💼">💼 仕事・出張</option>
-              <option value="🍻">🍻 友人・遊び</option>
-              <option value="🏥">🏥 用事・通院</option>
-              <option value="📌">📌 重要予定</option>
+              <option value="📌">📌 独自予定メモ</option>
+              <option value="🚗">🚗 旅行・移動</option>
+              <option value="💼">💼 業務・集中</option>
+              <option value="🍻">🍻 飲み会・遊び</option>
+              <option value="🏥">🏥 私用・通院</option>
             </select>
-            <input type="text" id="event-title" required placeholder="例：温泉旅行 / 終日定例会議" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-3 py-2 border rounded-lg font-bold">
+            <input type="text" id="event-title" required placeholder="例：作業集中ブロック / 予備日" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-3 py-2 border rounded-lg font-bold">
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-bold opacity-60 mb-0.5">開始日</label>
-              <input type="date" id="event-start" required style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-2.5 py-1.5 border rounded-lg">
+              <input type="date" id="event-start" required style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-2.5 py-1.5 border rounded-lg cursor-pointer">
             </div>
             <div>
               <label class="block text-[10px] font-bold opacity-60 mb-0.5">終了日</label>
-              <input type="date" id="event-end" required style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-2.5 py-1.5 border rounded-lg">
+              <input type="date" id="event-end" required style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-2.5 py-1.5 border rounded-lg cursor-pointer">
             </div>
           </div>
           <button type="submit" class="w-full py-2 font-extrabold text-white bg-amber-600 hover:bg-amber-500 rounded-lg shadow-sm transition cursor-pointer">
@@ -452,26 +467,84 @@
     </div>
   </div>
 
-  <!-- ==================== モーダル：カテゴリー管理 ==================== -->
+  <!-- ==================== モーダル：Googleカレンダー予定詳細（原本保護・安全閲覧） ==================== -->
+  <div id="google-event-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-md overflow-hidden">
+      <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span id="gcal-view-icon" class="text-base">📅</span>
+          <h2 class="text-sm font-extrabold flex items-center gap-1.5">
+            <span>Googleカレンダー同期予定</span>
+            <span class="text-[10px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-500 font-bold border border-emerald-500/30">原本連動</span>
+          </h2>
+        </div>
+        <button type="button" id="btn-close-gcal-modal" class="opacity-60 hover:opacity-100 p-1 rounded-lg cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-3.5 text-xs">
+        <div class="p-3 rounded-xl border border-inherit space-y-1" style="background-color: var(--g-bg-sub);">
+          <div class="flex items-center gap-2">
+            <span id="gcal-view-color-dot" class="w-3 h-3 rounded-full flex-shrink-0"></span>
+            <h3 id="gcal-view-title" class="text-sm font-extrabold break-words"></h3>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] font-mono opacity-80 pt-1">
+            <span id="gcal-view-date-badge" class="px-2 py-0.5 rounded bg-black/20 font-bold"></span>
+            <span id="gcal-view-time-badge" class="px-2 py-0.5 rounded bg-sky-500/15 text-sky-400 font-bold"></span>
+          </div>
+        </div>
+
+        <div id="gcal-view-loc-box" class="hidden flex items-start gap-2 p-2.5 rounded-lg border border-inherit text-[11px] opacity-80">
+          <span class="flex-shrink-0">📍</span>
+          <span id="gcal-view-location" class="break-words"></span>
+        </div>
+
+        <div id="gcal-view-desc-box" class="hidden p-2.5 rounded-lg border border-inherit text-[11px] font-mono opacity-80 max-h-24 overflow-y-auto whitespace-pre-wrap break-words"></div>
+
+        <p class="text-[10px] opacity-60 leading-relaxed">
+          ※会議URL・参加者・繰り返し設定等の原本データを安全に保護するため、予定の編集・削除はGoogleカレンダー公式画面で行います。
+        </p>
+
+        <div class="pt-2 border-t border-inherit flex items-center justify-between gap-2">
+          <button type="button" id="btn-close-gcal-modal-footer" class="px-4 py-2 text-xs font-bold opacity-70 hover:opacity-100 rounded-xl transition cursor-pointer">
+            閉じる
+          </button>
+          <a id="btn-open-gcal-web" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 text-xs font-extrabold text-white bg-sky-600 hover:bg-sky-500 rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer">
+            <span>🔗</span>
+            <span>Googleカレンダーで開いて編集</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 🌟 モーダル：カテゴリー管理（名前直接編集・安全一括リネーム対応） ==================== -->
   <div id="category-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-md overflow-hidden">
       <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between">
-        <h2 class="text-base font-extrabold">区分（カテゴリー）管理</h2>
+        <h2 class="text-base font-extrabold flex items-center gap-2">
+          <span>🏷️</span><span>区分（カテゴリー）管理 ＆ リネーム</span>
+        </h2>
         <button type="button" id="btn-close-cat-modal" class="opacity-60 hover:opacity-100 p-1 rounded-lg cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
       <div class="p-6 space-y-4">
+        <p class="text-[11px] opacity-70 leading-relaxed">
+          ※区分名を変更すると、所属するすべてのアクションの区分名が自動で一括リネームされ、コックピット側へも即時同期されます。
+        </p>
+
         <form id="category-form" class="flex items-center gap-2">
           <input type="color" id="new-cat-color" value="#0284c7" class="w-10 h-10 p-1 rounded-xl border border-inherit cursor-pointer bg-transparent">
-          <input type="text" id="new-cat-name" required placeholder="新しい区分名..." style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-3.5 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <input type="text" id="new-cat-name" required placeholder="新しい区分名を追加..." style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-3.5 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-bold">
           <button type="submit" class="px-4 py-2.5 text-xs font-extrabold text-white bg-sky-600 hover:bg-sky-500 rounded-xl transition cursor-pointer">
             追加
           </button>
         </form>
 
-        <div class="space-y-2 max-h-60 overflow-y-auto" id="category-list-editor"></div>
+        <div class="space-y-2 max-h-64 overflow-y-auto" id="category-list-editor"></div>
       </div>
     </div>
   </div>
@@ -993,6 +1066,94 @@
         return { headerHtml, gridBgHtml };
       }
 
+      /**
+       * 🌟 予定レーン（46px固定高）内の2段スマートスタック配置計算
+       */
+      function buildEventLaneHtml(dayWidth) {
+        const sortedEvents = [...state.events].sort((a, b) => {
+          const sComp = (a.startDate || '').localeCompare(b.startDate || '');
+          if (sComp !== 0) return sComp;
+          return (a.startTime || '').localeCompare(b.startTime || '');
+        });
+
+        const trackEnds = ['', ''];
+        let html = '';
+
+        sortedEvents.forEach(ev => {
+          const sDate = ev.startDate || state.timelineStartStr;
+          const eDate = ev.endDate || sDate;
+
+          const startOffset  = diffDays(state.timelineStartStr, sDate);
+          const durationDays = Math.max(1, diffDays(sDate, eDate) + 1);
+          const evLeft        = startOffset * dayWidth + 2;
+          const evWidth       = Math.max(dayWidth - 4, durationDays * dayWidth - 4);
+
+          let trackIndex = 0;
+          if (trackEnds[0] && sDate <= trackEnds[0]) {
+            if (!trackEnds[1] || sDate > trackEnds[1]) {
+              trackIndex = 1;
+            } else {
+              trackIndex = 1;
+            }
+          }
+          trackEnds[trackIndex] = eDate;
+
+          const topPx = trackIndex === 0 ? 3 : 23;
+          const heightPx = 18;
+
+          const isGoogle = (ev.source === 'google');
+          const evColor = ev.color || '#f59e0b';
+          const icon = ev.icon || (isGoogle ? '📅' : '📌');
+          const timeText = ev.isAllDay ? '終日' : (ev.timeRangeText || (ev.startTime ? `${ev.startTime}` : ''));
+
+          let labelHtml = '';
+          if (state.scale === 'day') {
+            labelHtml = `
+              <span class="flex-shrink-0 text-[10px]">${icon}</span>
+              ${timeText ? `<span class="text-[9px] font-mono opacity-85 shrink-0 font-bold">[${timeText}]</span>` : ''}
+              <span class="text-[10px] font-extrabold truncate drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">${escapeHtml(ev.title)}</span>
+            `;
+          } else if (state.scale === 'week') {
+            const shortTitle = ev.title.length > 5 ? ev.title.substring(0, 4) + '..' : ev.title;
+            labelHtml = `
+              <span class="flex-shrink-0 text-[9px]">${icon}</span>
+              ${ev.startTime ? `<span class="text-[8px] font-mono font-bold">${ev.startTime.split(':')[0]}h</span>` : ''}
+              <span class="text-[9px] font-extrabold truncate">${escapeHtml(shortTitle)}</span>
+            `;
+          } else {
+            labelHtml = ``;
+          }
+
+          // 🌟 スッキリ整理された安全ツールチップ（&#10;の文字化けを完全排除）
+          const dateRangeLabel = (ev.startDate === ev.endDate || !ev.endDate)
+            ? ev.startDate
+            : `${ev.startDate} 〜 ${ev.endDate}`;
+
+          const tooltipLines = [
+            ev.title,
+            `${dateRangeLabel} (${timeText || '終日'})`
+          ];
+          const cleanTooltip = tooltipLines.join('\n');
+
+          html += `
+            <div
+              data-event-id="${ev.id}"
+              data-is-google="${isGoogle ? 'true' : 'false'}"
+              style="left: ${evLeft}px; width: ${evWidth}px; top: ${topPx}px; height: ${heightPx}px; background-color: ${evColor}2b; border-color: ${evColor}; color: ${evColor};"
+              class="event-bar-stack absolute rounded border px-1.5 flex items-center gap-1 cursor-pointer overflow-hidden shadow-sm"
+              title="${escapeHtml(cleanTooltip)}"
+            >
+              <div style="background-color: ${evColor};" class="absolute left-0 top-0 bottom-0 w-1 flex-shrink-0 opacity-80"></div>
+              <div class="flex items-center gap-1 min-w-0 pl-1">
+                ${labelHtml}
+              </div>
+            </div>
+          `;
+        });
+
+        return html;
+      }
+
       function renderGanttWorkspace() {
         const leftContainer     = document.getElementById('left-scroll-container');
         const timelineHeader    = document.getElementById('timeline-header');
@@ -1023,26 +1184,7 @@
         }
 
         if (eventCountBadge) eventCountBadge.textContent = `${state.events.length}件`;
-        let eventLaneHtml = '';
-        state.events.forEach(ev => {
-          const evStartOffset = diffDays(state.timelineStartStr, ev.startDate);
-          const evDuration    = Math.max(1, diffDays(ev.startDate, ev.endDate) + 1);
-          const evLeft        = evStartOffset * dayWidth + 2;
-          const evWidth       = Math.max(dayWidth - 4, evDuration * dayWidth - 4);
-
-          eventLaneHtml += `
-            <div
-              data-open-event-modal="true"
-              style="left: ${evLeft}px; width: ${evWidth}px;"
-              class="gantt-bar absolute h-[30px] rounded-lg bg-amber-500/20 border border-amber-500/70 px-2 flex items-center gap-1 cursor-pointer shadow-sm overflow-hidden"
-              title="${ev.icon} ${escapeHtml(ev.title)} (${ev.startDate} 〜 ${ev.endDate})"
-            >
-              <span class="text-xs flex-shrink-0">${ev.icon}</span>
-              <span class="text-[11px] font-extrabold text-amber-500 truncate">${escapeHtml(ev.title)}</span>
-            </div>
-          `;
-        });
-        timelineEventLane.innerHTML = eventLaneHtml;
+        timelineEventLane.innerHTML = buildEventLaneHtml(dayWidth);
 
         const filteredTasks = state.selectedCategoryFilter === 'ALL'
           ? state.tasks
@@ -1200,12 +1342,14 @@
           const barColor     = isDone ? '#64748b' : (cat ? cat.color : '#0284c7');
           const barLabel     = `${isDone ? '✅ ' : ''}${escapeHtml(task.title)} 【${hours}h / ${progress}%】`;
 
+          const taskTooltip = `${task.title}\n${task.startDate} 〜 ${task.endDate} (${hours}h / 進捗: ${progress}%)`;
+
           barHtml = `
             <div
               data-edit-task="${task.id}"
               style="left: ${barLeft}px; width: ${barWidth}px; height: ${visual.heightPx}px; background-color: ${barColor}28; border-color: ${barColor};"
               class="gantt-bar absolute rounded-lg border cursor-pointer overflow-hidden flex items-center shadow-sm ${visual.borderClass}"
-              title="${escapeHtml(task.title)}&#10;期間: ${task.startDate} 〜 ${task.endDate}&#10;工数: ${hours}h&#10;進捗: ${progress}%"
+              title="${escapeHtml(taskTooltip)}"
             >
               <div style="width: ${progress}%; background-color: ${barColor};" class="h-full transition-all duration-300 opacity-90"></div>
               <div class="absolute inset-0 px-2.5 flex items-center pointer-events-none">
@@ -1275,12 +1419,58 @@
           });
         });
 
-        document.querySelectorAll('[data-open-event-modal]').forEach(el => {
+        document.querySelectorAll('[data-event-id]').forEach(el => {
           el.addEventListener('click', (e) => {
             e.stopPropagation();
-            openEventModal();
+            const evId = el.dataset.eventId;
+            const isGoogle = el.dataset.isGoogle === 'true';
+            const ev = state.events.find(x => x.id === evId);
+            if (!ev) return;
+
+            if (isGoogle) {
+              openGoogleEventModal(ev);
+            } else {
+              openEventModal();
+            }
           });
         });
+      }
+
+      function openGoogleEventModal(ev) {
+        const modal = document.getElementById('google-event-modal');
+        if (!modal) return;
+
+        document.getElementById('gcal-view-icon').textContent = ev.icon || '📅';
+        document.getElementById('gcal-view-title').textContent = ev.title;
+        document.getElementById('gcal-view-color-dot').style.backgroundColor = ev.color || '#0284c7';
+        document.getElementById('gcal-view-date-badge').textContent = `${ev.startDate} 〜 ${ev.endDate}`;
+        document.getElementById('gcal-view-time-badge').textContent = ev.isAllDay ? '終日' : (ev.timeRangeText || '時間指定');
+
+        const locBox = document.getElementById('gcal-view-loc-box');
+        const locEl = document.getElementById('gcal-view-location');
+        if (ev.location) {
+          locEl.textContent = ev.location;
+          locBox.classList.remove('hidden');
+        } else {
+          locBox.classList.add('hidden');
+        }
+
+        const descBox = document.getElementById('gcal-view-desc-box');
+        if (ev.description) {
+          descBox.textContent = ev.description;
+          descBox.classList.remove('hidden');
+        } else {
+          descBox.classList.add('hidden');
+        }
+
+        const linkBtn = document.getElementById('btn-open-gcal-web');
+        linkBtn.href = ev.htmlLink || 'https://calendar.google.com/';
+
+        modal.classList.remove('hidden');
+      }
+
+      function closeGoogleEventModal() {
+        document.getElementById('google-event-modal')?.classList.add('hidden');
       }
 
       function setupScrollSync() {
@@ -1437,11 +1627,13 @@
 
       function renderEventEditorList() {
         const container = document.getElementById('event-list-editor');
-        if (state.events.length === 0) {
-          container.innerHTML = `<div class="text-center opacity-60 py-3">登録済みの予定イベントはありません</div>`;
+        const manualList = state.events.filter(e => e.source !== 'google');
+
+        if (manualList.length === 0) {
+          container.innerHTML = `<div class="text-center opacity-60 py-3">手動追加された独自予定はありません</div>`;
           return;
         }
-        container.innerHTML = state.events.map(ev => `
+        container.innerHTML = manualList.map(ev => `
           <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex items-center justify-between p-2.5 rounded-xl border">
             <div class="min-w-0 pr-2">
               <div class="font-extrabold truncate">${ev.icon} ${escapeHtml(ev.title)}</div>
@@ -1457,7 +1649,7 @@
             saveMasterState();
             renderEventEditorList();
             renderAll();
-            showToast('予定イベントを削除しました');
+            showToast('手動予定を削除しました');
           });
         });
       }
@@ -1465,37 +1657,82 @@
       function openCategoryModal() { renderCategoryEditorList(); document.getElementById('category-modal').classList.remove('hidden'); }
       function closeCategoryModal() { document.getElementById('category-modal').classList.add('hidden'); }
 
+      /**
+       * 🌟 カテゴリー一覧描画（名前変更テキストボックス ＆ 一括安全リネーム機能付き）
+       */
       function renderCategoryEditorList() {
         const container = document.getElementById('category-list-editor');
         container.innerHTML = state.categories.map(cat => {
           const count = state.tasks.filter(t => t.categoryId === cat.id).length;
           return `
-            <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex items-center justify-between p-3 rounded-xl border">
-              <div class="flex items-center gap-3">
-                <input type="color" value="${cat.color}" data-cat-color="${cat.id}" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
-                <span class="text-xs font-extrabold">${escapeHtml(cat.name)}</span>
-                <span class="text-[10px] opacity-70">(${count}件)</span>
+            <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex items-center justify-between p-2.5 rounded-xl border gap-2">
+              <div class="flex items-center gap-2 flex-1 min-w-0">
+                <input type="color" value="${cat.color}" data-cat-color="${cat.id}" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent flex-shrink-0" title="色を変更">
+                <input type="text" value="${escapeHtml(cat.name)}" data-cat-rename="${cat.id}" class="flex-1 min-w-0 px-2 py-1 text-xs border border-inherit rounded-lg font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-sky-500" title="区分名を変更">
+                <span class="text-[10px] opacity-60 flex-shrink-0 font-mono">(${count}件)</span>
               </div>
-              ${state.categories.length > 1 ? `<button type="button" data-del-cat="${cat.id}" class="text-xs text-rose-500 hover:text-rose-400 font-bold px-2.5 py-1 rounded hover:bg-rose-500/10 transition cursor-pointer">削除</button>` : ''}
+              ${state.categories.length > 1 ? `<button type="button" data-del-cat="${cat.id}" class="text-xs text-rose-500 hover:text-rose-400 font-bold px-2 py-1 rounded hover:bg-rose-500/10 transition cursor-pointer flex-shrink-0">削除</button>` : ''}
             </div>
           `;
         }).join('');
 
+        // カラー変更
         container.querySelectorAll('[data-cat-color]').forEach(input => {
           input.addEventListener('change', (e) => {
             const cat = state.categories.find(c => c.id === input.dataset.catColor);
-            if (cat) { cat.color = e.target.value; saveMasterState(); renderAll(); }
+            if (cat) {
+              cat.color = e.target.value;
+              saveMasterState();
+              renderAll();
+            }
           });
         });
 
+        // 🌟 区分名の変更（リネーム）＆ 所属タスクの一括自動リネーム
+        container.querySelectorAll('[data-cat-rename]').forEach(input => {
+          input.addEventListener('change', (e) => {
+            const newName = e.target.value.trim();
+            const catId = input.dataset.catRename;
+            if (!newName) return;
+
+            const cat = state.categories.find(c => c.id === catId);
+            if (!cat) return;
+
+            const oldName = cat.name;
+            cat.name = newName;
+
+            // 所属する全タスクのカテゴリー名を一括同期
+            let affectedCount = 0;
+            state.tasks.forEach(t => {
+              if (t.categoryId === catId || t.category === oldName) {
+                t.category = newName;
+                affectedCount++;
+              }
+            });
+
+            saveMasterState();
+            renderAll();
+            showToast(`区分を「${newName}」に更新（${affectedCount}件のタスクを一括連動）`, 'success');
+          });
+        });
+
+        // 削除
         container.querySelectorAll('[data-del-cat]').forEach(btn => {
           btn.addEventListener('click', () => {
             const catId    = btn.dataset.delCat;
             const fallback = state.categories.find(c => c.id !== catId)?.id;
-            state.tasks.forEach(t => { if (t.categoryId === catId) t.categoryId = fallback; });
+            const fallbackName = state.categories.find(c => c.id !== catId)?.name || '一般';
+            state.tasks.forEach(t => {
+              if (t.categoryId === catId) {
+                t.categoryId = fallback;
+                t.category = fallbackName;
+              }
+            });
             state.categories = state.categories.filter(c => c.id !== catId);
             if (state.selectedCategoryFilter === catId) state.selectedCategoryFilter = 'ALL';
-            saveMasterState(); renderCategoryEditorList(); renderAll();
+            saveMasterState();
+            renderCategoryEditorList();
+            renderAll();
             showToast('区分を削除しました');
           });
         });
@@ -1522,6 +1759,9 @@
         document.getElementById('btn-add-task').addEventListener('click', () => openTaskModal(null));
         document.getElementById('btn-close-task-modal').addEventListener('click', closeTaskModal);
         document.getElementById('btn-cancel-task').addEventListener('click', closeTaskModal);
+
+        document.getElementById('btn-close-gcal-modal')?.addEventListener('click', closeGoogleEventModal);
+        document.getElementById('btn-close-gcal-modal-footer')?.addEventListener('click', closeGoogleEventModal);
 
         document.getElementById('btn-modal-delete-task').addEventListener('click', () => {
           const id = document.getElementById('task-id').value;
@@ -1556,12 +1796,12 @@
           if (!title) return;
           if (end < start) end = start;
 
-          state.events.push({ id: 'ev-' + Date.now(), icon, title, startDate: start, endDate: end });
+          state.events.push({ id: 'ev-' + Date.now(), source: 'manual', icon, title, startDate: start, endDate: end });
           document.getElementById('event-title').value = '';
           saveMasterState();
           renderEventEditorList();
           renderAll();
-          showToast('予定イベントを追加しました', 'success');
+          showToast('手動予定メモを追加しました', 'success');
         });
 
         document.querySelectorAll('.prog-mode-btn').forEach(btn => {
@@ -1671,18 +1911,28 @@
           showToast(`区分「${name}」を追加しました`, 'success');
         });
 
-        // 🌟 コックピット側のデータ・テーマ変更をリアルタイム同期
+        // 🌟 コックピット側のデータ・イベント・テーマ変更をリアルタイム同期
         window.addEventListener('storage', (event) => {
           if (event.key === STORAGE_KEY_COCKPIT_TASKS) {
             loadMasterState();
             renderAll();
-            showToast('🔄 コックピットの最新データを同期しました', 'info');
+            showToast('🔄 コックピットの最新タスクを同期しました', 'info');
+          } else if (event.key === STORAGE_KEY_EVENTS) {
+            loadMasterState();
+            renderAll();
+            showToast('📅 Googleカレンダーの最新予定を同期しました', 'info');
           } else if (event.key === STORAGE_KEY_THEME) {
             const newTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'dark';
             state.theme = newTheme;
             applyThemeUI(newTheme);
             renderGanttWorkspace();
           }
+        });
+
+        // 🌟 タブを前面にした瞬間の自動再描画（F5不要・常に最新同期）
+        window.addEventListener('focus', () => {
+          loadMasterState();
+          renderAll();
         });
       }
 
