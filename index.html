@@ -315,13 +315,13 @@
               <span id="cal-sync-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
               <span id="cal-sync-label">OFF</span>
             </button>
-            <button id="btn-manual-sync" onclick="syncAllTasksToGoogleCalendar()" class="text-slate-400 hover:text-sky-500 p-0.5 transition cursor-pointer" title="今すぐカレンダー同期を実行">
+            <button id="btn-manual-sync" onclick="syncAllTasksToGoogleCalendar()" class="text-slate-400 hover:text-sky-500 p-0.5 transition cursor-pointer" title="今すぐカレンダー同期を実行（Google予定も自動取込）">
               <i data-lucide="refresh-cw" class="w-3 h-3"></i>
             </button>
           </div>
         </div>
 
-        <!-- 🌟 ④【新設】ガントチャート直結起動ボタン（同一マスターデータ連携） -->
+        <!-- 🌟 ④ ガントチャート直結起動ボタン（同一マスターデータ連携） -->
         <button onclick="openGanttChartWindow()" id="btn-open-gantt" class="h-full px-2.5 flex items-center justify-center gap-1 text-[11px] font-black bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white rounded-lg transition shadow-sm active:scale-95 cursor-pointer shrink-0" title="タイムライン・工数俯瞰ガントチャートを開く">
           <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
           <span>ガント</span>
@@ -337,7 +337,7 @@
           <h1 class="text-xs font-black tracking-tight t-text-main flex items-center gap-1.5">
             <span>Wish & Action コックピット</span>
             <button onclick="openVersionModal()" id="version-tag" class="font-mono text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 hover:opacity-80 transition flex items-center gap-0.5 shadow-sm border border-sky-500/20 cursor-pointer" title="クリックでバージョン更新履歴を表示">
-              <span id="header-version-label">v1.0.0</span>
+              <span id="header-version-label">v1.1.0</span>
               <i data-lucide="history" class="w-2 h-2"></i>
             </button>
           </h1>
@@ -1115,7 +1115,7 @@
       </div>
       <div class="flex-1 overflow-y-auto py-3 space-y-2 text-xs font-mono" id="version-history-list"></div>
       <div class="pt-3 border-t border-inherit flex items-center justify-between text-[11px] t-text-muted shrink-0 font-bold">
-        <span>プロジェクト現在日: <strong id="lbl-system-date" class="t-text-main font-black">2026-11-04</strong></span>
+        <span>プロジェクト現在日: <strong id="lbl-system-date" class="t-text-main font-black">2026-11-16</strong></span>
         <button onclick="closeVersionModal()" class="px-4 py-1.5 btn-brand rounded-lg text-xs font-bold cursor-pointer">閉じる</button>
       </div>
     </div>
@@ -1484,7 +1484,7 @@
         
         const exportPayload = {
           exportTimestamp: new Date().toISOString(),
-          version: 'v1.0.0',
+          version: 'v1.1.0',
           source: 'Wish & Action Cockpit Backup',
           sessions: sessions,
           tasks: tasks
