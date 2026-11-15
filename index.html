@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wish & Action コックピット | やりたいことをカタチにする思考実現システム</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, Noto Sans JP & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Google Identity Services (OAuth2 Token Client) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- 1. バージョン定義マスタ（独立外部ファイル） -->
+  <script src="version.js"></script>
+
+  <!-- 2. コックピット動的プログラム本体（安全分離） -->
+  <script src="app.js" defer></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 🎨 洗練された統一コックピット・テーマ ＆ カラーユニバーサルデザイン (CUD) */
+
+    /* ☀️ ライト：清潔感のある上質なパールスレート ＋ 濃紺計器文字 */
+    body.theme-light {
+      --bg-body: #f8fafc;
+      --bg-grid: rgba(148, 163, 184, 0.15);
+      --bg-header: rgba(255, 255, 255, 0.98);
+      --border-header: #cbd5e1;
+      --bg-pane: #ffffff;
+      --border-pane: #cbd5e1;
+      --bg-card: #ffffff;
+      --bg-card-sub: #f1f5f9;
+      --border-card: #cbd5e1;
+      --spotlight-bg: #f0f9ff;
+      --spotlight-border: #0284c7;
+      --spotlight-glow: 0 0 0 1.5px #0284c7, 0 4px 14px rgba(2, 132, 199, 0.15);
+
+      /* 🧭 CUD明暗反転ガイダンスバー */
+      --guidance-bar-bg: #0f172a;
+      --guidance-bar-bg-pulse: #0369a1;
+      --guidance-bar-border: #0284c7;
+      --guidance-bar-text: #ffffff;
+      --guidance-bar-subtext: #94a3b8;
+      --guidance-bar-badge-bg: #0284c7;
+      --guidance-bar-badge-text: #ffffff;
+      --guidance-pulse-glow: 0 0 0 2px #38bdf8, 0 4px 18px rgba(2, 132, 199, 0.45);
+
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --accent-btn: #0284c7;
+      --accent-btn-hover: #0369a1;
+      --accent-btn-text: #ffffff;
+      --scroll-track: #f1f5f9;
+      --scroll-thumb: #94a3b8;
+      color-scheme: light;
+    }
+
+    /* 🌙 ダーク：色数を抑えたサイバーミニマル漆黒（カレンダー視認性完全保証） */
+    body.theme-dark {
+      --bg-body: #090d16;
+      --bg-grid: rgba(255, 255, 255, 0.035);
+      --bg-header: rgba(15, 23, 42, 0.97);
+      --border-header: #243044;
+      --bg-pane: #0d1321;
+      --border-pane: #243044;
+      --bg-card: #151d2e;
+      --bg-card-sub: #0f1624;
+      --border-card: #273752;
+      --spotlight-bg: #13273e;
+      --spotlight-border: #38bdf8;
+      --spotlight-glow: 0 0 0 1.5px #38bdf8, 0 4px 18px rgba(56, 189, 248, 0.25);
+
+      /* 🧭 CUD明暗反転ガイダンスバー */
+      --guidance-bar-bg: #ffffff;
+      --guidance-bar-bg-pulse: #fde68a;
+      --guidance-bar-border: #38bdf8;
+      --guidance-bar-text: #090d16;
+      --guidance-bar-subtext: #475569;
+      --guidance-bar-badge-bg: #0284c7;
+      --guidance-bar-badge-text: #ffffff;
+      --guidance-pulse-glow: 0 0 0 2px #f59e0b, 0 4px 22px rgba(245, 158, 11, 0.55);
+
+      --text-main: #ffffff;
+      --text-sub: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent-btn: #0284c7;
+      --accent-btn-hover: #0369a1;
+      --accent-btn-text: #ffffff;
+      --scroll-track: #090d16;
+      --scroll-thumb: #334155;
+      color-scheme: dark;
+    }
+
+    /* ⚡ ポップ：バイオレット＆アンバーの上質ネオン（カレンダー視認性完全保証） */
+    body.theme-pop {
+      --bg-body: #11071f;
+      --bg-grid: rgba(245, 158, 11, 0.08);
+      --bg-header: rgba(26, 11, 48, 0.98);
+      --border-header: #581c87;
+      --bg-pane: #1a0c33;
+      --border-pane: #581c87;
+      --bg-card: #261247;
+      --bg-card-sub: #1d0c38;
+      --border-card: #6b21a8;
+      --spotlight-bg: #3c186b;
+      --spotlight-border: #f59e0b;
+      --spotlight-glow: 0 0 0 1.5px #f59e0b, 0 4px 18px rgba(245, 158, 11, 0.3);
+
+      /* 🧭 CUD明暗反転ガイダンスバー */
+      --guidance-bar-bg: #f59e0b;
+      --guidance-bar-bg-pulse: #fb7185;
+      --guidance-bar-border: #ffffff;
+      --guidance-bar-text: #11071f;
+      --guidance-bar-subtext: #451a03;
+      --guidance-bar-badge-bg: #11071f;
+      --guidance-bar-badge-text: #fbbf24;
+      --guidance-pulse-glow: 0 0 0 2px #f43f5e, 0 4px 22px rgba(244, 63, 94, 0.6);
+
+      --text-main: #ffffff;
+      --text-sub: #f3e8ff;
+      --text-muted: #c084fc;
+      --accent-btn: #f59e0b;
+      --accent-btn-hover: #d97706;
+      --accent-btn-text: #11071f;
+      --scroll-track: #11071f;
+      --scroll-thumb: #9333ea;
+      color-scheme: dark;
+    }
+
+    body {
+      background-color: var(--bg-body);
+      background-image: 
+        linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--text-main);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--scroll-track); }
+    ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 9999px; }
+
+    .t-header { background: var(--bg-header); border-color: var(--border-header); }
+    .t-pane { background: var(--bg-pane); border-color: var(--border-pane); }
+    .t-card { background: var(--bg-card); border-color: var(--border-card); }
+    .t-card-sub { background: var(--bg-card-sub); border-color: var(--border-card); }
+    .t-text-main { color: var(--text-main); }
+    .t-text-sub { color: var(--text-sub); }
+    .t-text-muted { color: var(--text-muted); }
+    
+    .btn-brand {
+      background-color: var(--accent-btn);
+      color: var(--accent-btn-text);
+      transition: all 0.2s;
+    }
+    .btn-brand:hover {
+      background-color: var(--accent-btn-hover);
+    }
+
+    .spotlight-active {
+      background-color: var(--spotlight-bg) !important;
+      border-color: var(--spotlight-border) !important;
+      box-shadow: var(--spotlight-glow) !important;
+      transition: all 0.2s ease;
+    }
+
+    .interactive-card {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .interactive-card:hover {
+      transform: translateY(-1.5px);
+    }
+
+    .advice-imported-settled {
+      opacity: 0.65 !important;
+      filter: grayscale(40%);
+      transition: all 0.3s ease;
+      background-color: rgba(148, 163, 184, 0.05) !important;
+      border-color: rgba(148, 163, 184, 0.3) !important;
+    }
+
+    @keyframes pulse-mic {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      50% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+    .recording-active { animation: pulse-mic 1.5s infinite; }
+
+    /* 🎙️ 録音中：枠全体の呼吸・脈動発光 */
+    @keyframes frame-recording-breath {
+      0%, 100% {
+        border-color: rgba(244, 63, 94, 0.55);
+        box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.3), 0 2px 10px rgba(244, 63, 94, 0.15);
+      }
+      50% {
+        border-color: rgba(244, 63, 94, 0.95);
+        box-shadow: 0 0 0 2.5px rgba(244, 63, 94, 0.5), 0 4px 18px rgba(244, 63, 94, 0.35);
+      }
+    }
+    .recording-glow-frame {
+      animation: frame-recording-breath 1.8s infinite ease-in-out !important;
+      border-color: #f43f5e !important;
+    }
+    
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.9;
+      transition: all 0.2s;
+      padding: 2px;
+      border-radius: 4px;
+    }
+    body.theme-dark input[type="date"]::-webkit-calendar-picker-indicator,
+    body.theme-pop input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(1.8) drop-shadow(0 0 2px rgba(56, 189, 248, 0.6));
+    }
+    body.theme-light input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: brightness(0.4) sepia(100%) hue-rotate(180deg) saturate(300%);
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+
+    .checklist-item {
+      transition: background-color 0.15s ease;
+    }
+    .checklist-item:hover {
+      background-color: rgba(2, 132, 199, 0.1);
+    }
+
+    /* 🧭 中央ペイン最下部：高コントラスト反転ガイダンスバー専用スタイル */
+    .guidance-bar-container {
+      background-color: var(--guidance-bar-bg);
+      border-color: var(--guidance-bar-border);
+      color: var(--guidance-bar-text);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .guidance-bar-container #banner-action-guide {
+      color: var(--guidance-bar-text) !important;
+    }
+    .guidance-bar-container #banner-context-insight {
+      color: var(--guidance-bar-subtext) !important;
+    }
+    .guidance-bar-container #banner-status-badge {
+      background-color: var(--guidance-bar-badge-bg) !important;
+      color: var(--guidance-bar-badge-text) !important;
+      border-color: transparent !important;
+    }
+
+    @keyframes guidance-bg-breath {
+      0%, 100% {
+        background-color: var(--guidance-bar-bg);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        transform: scale(1);
+      }
+      50% {
+        background-color: var(--guidance-bar-bg-pulse);
+        box-shadow: var(--guidance-pulse-glow);
+        transform: scale(1.002);
+      }
+    }
+    .guidance-active-pulse {
+      animation: guidance-bg-breath 2.6s infinite ease-in-out !important;
+    }
+  </style>
+</head>
+<body class="theme-light h-screen font-sans flex flex-col selection:bg-sky-500 selection:text-white overflow-hidden">
+
+  <!-- ================= 👑 1層スリム垂直動線連動ヘッダー（4.3fr : 5fr : 2.7fr） ================= -->
+  <header class="border-b t-header backdrop-blur-md shrink-0 z-40 px-3.5 py-1.5 shadow-sm transition-colors duration-200">
+    <div class="max-w-[1920px] mx-auto grid grid-cols-[4.3fr_5fr_2.7fr] gap-3.5 items-center h-[34px]">
+      
+      <!-- ================= 【左ブロック (4.3fr)】：左ペイン直結計器 ＆ ガントチャート起動 ================= -->
+      <div class="flex items-center gap-1.5 min-w-0 pr-1 h-full">
+        <!-- ① 仕込み中バッジ -->
+        <button onclick="filterAttentionTasks()" id="badge-needs-attention" class="h-full flex items-center justify-center gap-1.5 px-2.5 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-mono font-bold shadow-sm hover:opacity-90 transition cursor-pointer shrink-0" title="クリックで仕込み中アクションを表示">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-500 shrink-0"></i>
+          <span class="truncate">仕込み中: <strong id="count-needs-attention" class="font-black text-amber-900 dark:text-white">0</strong>件</span>
+        </button>
+
+        <!-- ② 温め中の構想バッジ -->
+        <button onclick="toggleLeftPaneView('ideas')" id="badge-stock-ideas" class="h-full flex items-center justify-center gap-1.5 px-2.5 rounded-lg bg-indigo-500/15 border border-indigo-500/40 text-indigo-800 dark:text-indigo-300 text-xs font-mono font-bold shadow-sm hover:opacity-90 transition cursor-pointer shrink-0" title="クリックで温め中の構想一覧を表示・切替">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-indigo-500 shrink-0"></i>
+          <span class="truncate">温め中: <strong id="count-stock-ideas" class="font-black text-indigo-900 dark:text-white">0</strong>件</span>
+        </button>
+
+        <!-- ③ カレンダー連携スイッチ -->
+        <div class="h-full flex items-center justify-between px-2 rounded-lg border t-card-sub text-xs shadow-sm flex-1 min-w-0">
+          <div class="flex items-center gap-1 min-w-0">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-sky-500 shrink-0"></i>
+            <span class="font-bold t-text-sub text-[11px] truncate">同期:</span>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button id="btn-toggle-cal-sync" onclick="toggleCalendarSyncMode()" class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold transition flex items-center gap-1 shadow-sm bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 cursor-pointer">
+              <span id="cal-sync-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+              <span id="cal-sync-label">OFF</span>
+            </button>
+            <button id="btn-manual-sync" onclick="syncAllTasksToGoogleCalendar()" class="text-slate-400 hover:text-sky-500 p-0.5 transition cursor-pointer" title="今すぐカレンダー同期を実行">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 🌟 ④【新設】ガントチャート直結起動ボタン（同一マスターデータ連携） -->
+        <button onclick="openGanttChartWindow()" id="btn-open-gantt" class="h-full px-2.5 flex items-center justify-center gap-1 text-[11px] font-black bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white rounded-lg transition shadow-sm active:scale-95 cursor-pointer shrink-0" title="タイムライン・工数俯瞰ガントチャートを開く">
+          <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+          <span>ガント</span>
+        </button>
+      </div>
+
+      <!-- ================= 【中央ブロック (5fr)】：センターピース（タイトル＆日時） ================= -->
+      <div class="flex items-center justify-center gap-3 min-w-0 h-full px-2">
+        <div class="flex items-center gap-1.5 shrink-0">
+          <div class="w-4 h-4 rounded btn-brand flex items-center justify-center shadow-sm">
+            <i data-lucide="sparkles" class="w-2.5 h-2.5"></i>
+          </div>
+          <h1 class="text-xs font-black tracking-tight t-text-main flex items-center gap-1.5">
+            <span>Wish & Action コックピット</span>
+            <button onclick="openVersionModal()" id="version-tag" class="font-mono text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 hover:opacity-80 transition flex items-center gap-0.5 shadow-sm border border-sky-500/20 cursor-pointer" title="クリックでバージョン更新履歴を表示">
+              <span id="header-version-label">v1.0.0</span>
+              <i data-lucide="history" class="w-2 h-2"></i>
+            </button>
+          </h1>
+        </div>
+
+        <span class="text-slate-300 dark:text-slate-700">|</span>
+
+        <!-- 日時表示 -->
+        <span class="font-mono text-[10px] t-text-muted font-bold flex items-center gap-1 shrink-0">
+          <i data-lucide="clock" class="w-2.5 h-2.5 text-sky-500"></i>
+          <span id="current-datetime">日時を読み込み中...</span>
+        </span>
+      </div>
+
+      <!-- ================= 【右ブロック (2.7fr)】：操作・設定・3大データツール（役割明確化） ================= -->
+      <div class="flex items-center justify-end gap-1.5 min-w-0 pl-1 h-full">
+        <!-- テーマ切替 -->
+        <div class="h-full flex items-center p-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-200/60 dark:bg-slate-800/60 font-mono text-xs shrink-0">
+          <button id="theme-btn-dark" onclick="setTheme('dark')" class="px-1.5 py-0.5 rounded text-[10px] font-bold transition flex items-center cursor-pointer" title="ダーク: 漆黒">
+            <span>🌙</span>
+          </button>
+          <button id="theme-btn-light" onclick="setTheme('light')" class="px-1.5 py-0.5 rounded text-[10px] font-bold transition flex items-center cursor-pointer" title="ライト: 上質白">
+            <span>☀️</span>
+          </button>
+          <button id="theme-btn-pop" onclick="setTheme('pop')" class="px-1.5 py-0.5 rounded text-[10px] font-bold transition flex items-center cursor-pointer" title="ポップ: ネオン">
+            <span>⚡</span>
+          </button>
+        </div>
+
+        <!-- 🌟 ① Thinking Studio からの安全引き継ぎ専用ボタン -->
+        <input type="file" id="studio-import-file-input" accept=".json" class="hidden" onchange="handleStudioImportFile(event)">
+        <button onclick="document.getElementById('studio-import-file-input').click()" class="h-full px-2 flex items-center justify-center gap-1 text-[11px] font-black bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition shadow-sm active:scale-95 cursor-pointer shrink-0" title="Thinking Studioで壁打ちしたファイルを既存データを消さずに追加">
+          <i data-lucide="send" class="w-3 h-3 text-sky-200"></i>
+          <span>スタジオ引継</span>
+        </button>
+
+        <!-- 🌟 ② システム全体のバックアップ復元専用ボタン（誤爆ガード付き） -->
+        <input type="file" id="restore-file-input" accept=".json,.js" class="hidden" onchange="handleRestoreFile(event)">
+        <button onclick="document.getElementById('restore-file-input').click()" class="h-full px-2 flex items-center justify-center gap-1 text-[11px] font-bold t-card hover:border-amber-500/50 text-amber-700 dark:text-amber-400 border rounded-lg transition shadow-sm cursor-pointer shrink-0" title="保存してあるバックアップからシステム全体を元の状態に戻す（復元）">
+          <i data-lucide="rotate-ccw" class="w-3 h-3 text-amber-500"></i>
+          <span>復元</span>
+        </button>
+
+        <!-- 🌟 ③ 現在の全データをPCへバックアップ保存 -->
+        <button onclick="exportCurrentDataToJson()" id="btn-export-direct" class="h-full px-2 flex items-center justify-center gap-1 text-[11px] font-bold t-card border hover:border-emerald-500/50 text-emerald-600 dark:text-emerald-400 rounded-lg transition shadow-sm cursor-pointer shrink-0" title="現在の全データをバックアップファイルとしてPCに保存">
+          <i data-lucide="save" class="w-3 h-3"></i>
+          <span>バックアップ</span>
+        </button>
+
+        <!-- 📘 ガイド -->
+        <button onclick="openGuideModal()" class="h-full px-2 flex items-center justify-center gap-1 text-[11px] font-bold t-card border hover:border-amber-500/50 text-amber-600 dark:text-amber-400 rounded-lg transition shadow-sm cursor-pointer shrink-0" title="総合ガイドブック">
+          <i data-lucide="book-open" class="w-3 h-3 text-amber-500"></i>
+          <span>ガイド</span>
+        </button>
+
+        <!-- ⚙️ 設定 -->
+        <button id="btn-open-settings" class="h-full flex items-center gap-1 text-xs font-bold t-card hover:opacity-90 t-text-main border px-2 rounded-lg transition shadow-sm cursor-pointer shrink-0" title="API・カレンダー設定">
+          <i data-lucide="settings" class="w-3.5 h-3.5 text-sky-500"></i>
+          <span class="text-[11px]">設定</span>
+          <span id="api-status-badge" class="flex items-center gap-1 text-[10px] font-mono">
+            <span id="api-status-dot" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= メイン 3ペイン コックピット（左 4 : 中央 5.3 : 右 2.7 比率完全ロック） ================= -->
+  <main class="flex-1 min-h-0 max-w-[1920px] w-full mx-auto p-3.5 grid grid-cols-[4fr_5.3fr_2.7fr] gap-3.5 overflow-hidden">
+
+    <!-- ==========================================
+         【左ペイン】実行アクション ⇄ 構想ストック管理（min-w-0 ロック）
+         ========================================== -->
+    <section id="pane-tasks" class="flex flex-col h-full min-h-0 min-w-0 w-full border rounded-2xl p-3.5 t-pane shadow-sm transition-colors duration-200 overflow-hidden">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-inherit shrink-0">
+        <div class="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800/70 p-1 rounded-xl">
+          <button id="tab-btn-actions" onclick="switchLeftPaneView('actions')" class="px-3.5 py-1 rounded-lg text-xs font-black transition flex items-center gap-1.5 bg-sky-600 text-white shadow-sm cursor-pointer">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+            <span>アクション (<span id="tab-count-actions">0</span>)</span>
+          </button>
+
+          <button id="tab-btn-ideas" onclick="switchLeftPaneView('ideas')" class="px-3.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
+            <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+            <span>構想ストック (<span id="tab-count-ideas">0</span>)</span>
+          </button>
+        </div>
+
+        <button onclick="openAddTaskModal()" id="btn-add-action-top" class="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer" title="新しいやりたいことを手動追加">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>追加</span>
+        </button>
+      </div>
+
+      <div id="filter-sort-bar" class="my-2 flex items-center justify-between t-card-sub p-1.5 rounded-xl border text-xs shrink-0">
+        <div class="relative">
+          <button id="btn-category-dropdown" onclick="toggleCategoryDropdown(event)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg t-card border t-text-main text-xs font-bold transition shadow-sm cursor-pointer">
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+            <span class="t-text-muted text-[11px]">区分:</span>
+            <strong id="label-selected-category" class="font-bold font-mono text-sky-600 dark:text-sky-400 truncate max-w-[90px]">すべて (0)</strong>
+            <i data-lucide="chevron-down" id="icon-cat-dropdown" class="w-3.5 h-3.5 t-text-muted transition-transform"></i>
+          </button>
+
+          <div id="menu-category-dropdown" class="hidden absolute left-0 top-full mt-1.5 w-56 t-card border rounded-xl shadow-2xl py-1 z-30 max-h-60 overflow-y-auto">
+            <div id="dropdown-items-container" class="flex flex-col text-xs font-mono"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1 font-mono text-[10px]">
+          <button id="sort-btn-due" onclick="toggleSortMode('due')" class="px-2.5 py-1 rounded-lg font-black bg-sky-600 text-white shadow-sm transition flex items-center gap-0.5 cursor-pointer" title="期日順">
+            <span>期日</span>
+            <span id="sort-indicator-due" class="text-[9px]">▲</span>
+          </button>
+          <button id="sort-btn-priority" onclick="toggleSortMode('priority')" class="px-2.5 py-1 rounded-lg font-bold t-text-muted hover:t-text-main transition flex items-center gap-0.5 cursor-pointer" title="重要度順">
+            <span>重要度</span>
+            <span id="sort-indicator-priority" class="text-[9px] opacity-0">▼</span>
+          </button>
+          <button id="sort-btn-created" onclick="toggleSortMode('created')" class="px-2.5 py-1 rounded-lg font-bold t-text-muted hover:t-text-main transition flex items-center gap-0.5 cursor-pointer" title="登録順">
+            <span>登録</span>
+            <span id="sort-indicator-created" class="text-[9px] opacity-0">▼</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="container-actions-view" class="flex-1 min-h-0 overflow-y-auto px-1 flex flex-col gap-2">
+        <div id="section-attention" class="hidden">
+          <div class="flex items-center justify-between mb-1.5 px-1">
+            <span class="text-xs font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+              仕込み中（期日・重要度が未設定）
+            </span>
+            <span class="text-[10px] text-amber-900 dark:text-amber-200 bg-amber-500/20 border border-amber-500/30 px-2 py-0.2 rounded-full font-black">要設定</span>
+          </div>
+          <div id="tasks-attention-container" class="flex flex-col gap-2"></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5 px-1">
+            <span class="text-xs font-black t-text-sub flex items-center gap-1.5">
+              <i data-lucide="list-todo" class="w-3.5 h-3.5 text-sky-500"></i>
+              進行中のアクション
+            </span>
+            <span id="active-tasks-count" class="font-mono text-xs text-sky-600 dark:text-sky-400 font-extrabold">0件</span>
+          </div>
+          <div id="tasks-active-container" class="flex flex-col gap-2">
+            <div class="text-center py-8 t-text-muted text-xs font-bold">登録されたやりたいことはありません</div>
+          </div>
+        </div>
+
+        <div id="section-completed" class="hidden border-t border-inherit pt-2">
+          <button onclick="toggleCompletedSection()" class="w-full flex items-center justify-between text-xs t-text-muted hover:t-text-main py-1 cursor-pointer">
+            <span class="flex items-center gap-1.5 font-bold">
+              <i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+              達成済みアクション (<span id="count-completed-tasks">0</span>)
+            </span>
+            <i data-lucide="chevron-down" id="icon-toggle-completed" class="w-3.5 h-3.5 transition-transform"></i>
+          </button>
+          <div id="tasks-completed-container" class="hidden mt-1.5 flex flex-col gap-2 opacity-60"></div>
+        </div>
+      </div>
+
+      <div id="container-ideas-view" class="hidden flex-1 min-h-0 overflow-y-auto px-1 flex flex-col gap-2">
+        <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-xs t-text-sub flex items-center justify-between">
+          <span class="font-bold flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-indigo-500"></i>
+            <span>温め中のアイデア・構想プール</span>
+          </span>
+          <span class="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">※期日なし・自由放置OK</span>
+        </div>
+        <div id="ideas-stock-container" class="flex flex-col gap-2"></div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         【中央ペイン】思考背景＆具体論点＆AI実行助言 ＋ 🧭 最下部ガイダンス（min-w-0 ロック）
+         ========================================== -->
+    <section id="pane-memos" class="flex flex-col h-full min-h-0 min-w-0 w-full border rounded-2xl p-3.5 t-pane shadow-sm transition-colors duration-200 relative overflow-hidden">
+      
+      <div id="center-welcome-panel" class="flex-1 min-w-0 flex flex-col justify-start items-center p-4 pt-6 text-center overflow-y-auto">
+        <div class="w-14 h-14 rounded-2xl bg-sky-500/15 text-sky-500 flex items-center justify-center mb-3 shadow-inner">
+          <i data-lucide="sparkles" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-base font-black t-text-main mb-1 tracking-wide">Wish & Action コックピット</h3>
+        <p class="text-xs t-text-sub font-medium mb-5">やりたいことを選択するか、新しいアイデアを登録してください</p>
+
+        <div class="w-full max-w-lg space-y-3 text-left">
+          <button onclick="openAddTaskModal()" class="w-full p-3.5 rounded-xl t-card-sub border border-inherit hover:border-sky-500/50 text-left flex items-start gap-3 shadow-sm transition active:scale-[0.99] group cursor-pointer">
+            <div class="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+              <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <p class="font-extrabold t-text-main text-sm group-hover:text-sky-600 transition-colors">1. 手動でやりたいことを追加する</p>
+                <span class="text-[10px] text-sky-600 dark:text-sky-400 font-mono font-bold bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">追加</span>
+              </div>
+              <p class="t-text-sub text-xs mt-1 leading-relaxed font-medium">
+                やりたいことを入力。AI逆算サポートで発想の原点(Why)や初手を自動推測。
+              </p>
+            </div>
+          </button>
+
+          <button onclick="startRecordingFromWelcome()" class="w-full p-3.5 rounded-xl t-card-sub border border-inherit hover:border-rose-500/50 text-left flex items-start gap-3 shadow-sm transition active:scale-[0.99] group cursor-pointer">
+            <div class="w-9 h-9 rounded-xl bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+              <i data-lucide="mic" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <p class="font-extrabold t-text-main text-sm group-hover:text-rose-500 transition-colors">2. 音声で思考・アイデアを話す</p>
+                <span class="text-[10px] text-rose-500 font-mono font-bold bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">録音開始</span>
+              </div>
+              <p class="t-text-sub text-xs mt-1 leading-relaxed font-medium">
+                右ペインのマイクを起動。思いついたことを自由に話して「スッキリ推敲」で整えてストック。
+              </p>
+            </div>
+          </button>
+
+          <button onclick="selectFirstTask()" class="w-full p-3.5 rounded-xl t-card-sub border border-inherit hover:border-sky-500/50 text-left flex items-start gap-3 shadow-sm transition active:scale-[0.99] group cursor-pointer">
+            <div class="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+              <i data-lucide="list-todo" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <p class="font-extrabold t-text-main text-sm group-hover:text-sky-500 transition-colors">3. 直近のアクションを確認・進める</p>
+                <span class="text-[10px] text-sky-600 dark:text-sky-400 font-mono font-bold bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">直近案件へ</span>
+              </div>
+              <p class="t-text-sub text-xs mt-1 leading-relaxed font-medium">
+                期日が最も近い直近のやりたいことを展開。実行助言を確認し、進捗メモにチェックリストとして取り込みます。
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div id="center-content-wrapper" class="hidden flex-1 min-h-0 min-w-0 flex flex-col gap-2 overflow-hidden">
+        <div class="flex items-center justify-between pb-1.5 border-b border-inherit shrink-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="p-1 rounded-md bg-sky-500/15 text-sky-600 dark:text-sky-400 shrink-0">
+              <i data-lucide="compass" class="w-4 h-4"></i>
+            </span>
+            <h2 class="font-black text-sm tracking-wide t-text-main truncate" id="center-header-title">
+              思考背景・実現論点 ＆ AI実行助言
+            </h2>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="clearSelection()" class="text-[11px] px-2.5 py-1 rounded-lg t-card hover:opacity-90 t-text-muted hover:t-text-main border font-bold transition flex items-center gap-1 shadow-sm cursor-pointer" title="案内画面に戻る">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <span>選択解除</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ① 上段：Why -->
+        <div id="block-why-container" class="p-2.5 rounded-xl t-card border shrink-0 shadow-sm relative transition-all min-w-0">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-500 shrink-0"></i>
+              <h3 class="text-xs font-black tracking-wide t-text-main truncate">
+                発想のきっかけ・思考背景 (Why)
+              </h3>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <span id="session-timestamp-label" class="font-mono text-[10px] t-text-muted mr-1 font-bold">--:--</span>
+              <button id="btn-edit-context" onclick="toggleEditContext()" class="t-text-muted hover:t-text-main p-1 rounded transition cursor-pointer" title="背景を手動修正">
+                <i data-lucide="edit-2" class="w-3 h-3"></i>
+              </button>
+              <button id="btn-delete-session" onclick="deleteCurrentSession()" class="t-text-muted hover:text-rose-500 p-1 rounded transition cursor-pointer" title="構想セッションを削除">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative min-w-0">
+            <p id="context-content" class="text-xs t-text-main leading-relaxed font-bold line-clamp-2 transition-all select-text break-words">
+              思考背景の記録がここに表示されます。
+            </p>
+            <button id="btn-toggle-why-expand" onclick="toggleWhyExpand(event)" class="hidden text-[10px] font-mono text-sky-600 dark:text-sky-400 font-bold hover:underline mt-0.5 cursor-pointer">
+              ▼ もっと見る
+            </button>
+          </div>
+
+          <div id="context-edit-container" class="hidden mt-2 flex flex-col gap-2">
+            <textarea id="context-edit-textarea" rows="2" class="w-full p-2 t-card border rounded-lg text-xs t-text-main focus:outline-none focus:border-sky-500 resize-none font-medium"></textarea>
+            <div class="flex justify-end gap-2">
+              <button onclick="toggleEditContext(false)" class="px-2.5 py-1 t-text-muted hover:t-text-main text-[11px] font-bold cursor-pointer">キャンセル</button>
+              <button onclick="saveContextEdit()" class="px-3 py-1 btn-brand rounded-lg text-[11px] font-bold cursor-pointer">保存</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ② 中段：What -->
+        <div id="block-what-container" class="shrink-0 flex flex-col p-2.5 rounded-xl t-card-sub border shadow-sm transition-all min-w-0">
+          <div class="flex items-center justify-between mb-1.5 pb-1 border-b border-inherit/40 shrink-0">
+            <h3 class="text-xs font-black tracking-wide flex items-center gap-1.5 t-text-main truncate">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-sky-500 shrink-0"></i> 実現テーマ・具体論点 (What)
+            </h3>
+            <span id="count-themes" class="font-mono text-[11px] font-black px-2 py-0.2 rounded-full t-card border t-text-sub shrink-0">0件</span>
+          </div>
+
+          <div id="themes-tab-bar" class="flex items-center gap-2 overflow-x-auto pb-1 mb-1 shrink-0 hidden"></div>
+          <div id="themes-container" class="flex flex-col gap-1.5 min-w-0"></div>
+        </div>
+
+        <!-- ③ 下段：How -->
+        <div id="section-ai-advice" class="flex-1 min-h-[220px] p-3 rounded-xl t-card border shadow-sm flex flex-col gap-2 overflow-hidden transition-all duration-300 min-w-0">
+          
+          <div class="flex items-center justify-between border-b border-inherit pb-1.5 gap-2 shrink-0">
+            <div class="flex items-center gap-1.5 flex-1 min-w-0">
+              <i data-lucide="zap" class="w-4 h-4 text-amber-500 shrink-0"></i>
+              <h3 class="text-xs font-black t-text-main truncate" title="助言対象">
+                AI実行助言: <span id="advice-theme-title" class="text-sky-600 dark:text-sky-400">未選択</span>
+              </h3>
+              <span id="advice-steps-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 shrink-0">可変手順</span>
+            </div>
+
+            <div class="flex items-center gap-1 shrink-0">
+              <button id="btn-import-to-memo" onclick="openImportConfirmModal()" class="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-black text-[10px] flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer" title="初手から始まる全手順を進捗メモに取り込む">
+                <i data-lucide="download" id="icon-import-memo" class="w-3 h-3"></i>
+                <span id="label-import-memo">メモへ取込</span>
+              </button>
+
+              <button onclick="handleCommentButtonClick()" class="px-2.5 py-1 rounded-lg t-card-sub hover:t-card text-sky-600 dark:text-sky-400 border border-inherit font-black text-[10px] flex items-center gap-1 shadow-sm transition cursor-pointer" title="助言へのツッコミ・条件追加">
+                <i data-lucide="message-square" class="w-3 h-3"></i>
+                <span>ツッコミ</span>
+              </button>
+
+              <button onclick="handleEditAdviceButtonClick()" class="t-text-muted hover:text-sky-500 p-1 rounded-lg transition border border-inherit t-card-sub cursor-pointer" title="助言をその場で直接編集">
+                <i data-lucide="edit-3" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- ツッコミ枠 -->
+          <div id="comment-box-wrapper" class="hidden p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 flex flex-col gap-2 shrink-0 transition-all min-w-0">
+            <div class="flex items-center justify-between text-[11px] font-bold text-sky-700 dark:text-sky-300">
+              <span class="flex items-center gap-1 truncate"><i data-lucide="corner-down-right" class="w-3.5 h-3.5 shrink-0"></i> 助言へのツッコミ・条件追加</span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <div id="comment-mic-indicator" class="hidden flex items-center gap-0.5">
+                  <span class="w-1 h-2.5 bg-rose-500 rounded-full animate-bounce"></span>
+                  <span class="w-1 h-3.5 bg-rose-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                  <span class="w-1 h-2 bg-rose-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                  <span class="text-[9px] font-mono text-rose-500 ml-1">録音中</span>
+                </div>
+
+                <button type="button" onclick="polishCommentTextWithAI()" class="px-2 py-0.5 rounded-md bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1 transition shadow-sm cursor-pointer" title="ツッコミ内容を読みやすく美しい日本語に整形します">
+                  <i data-lucide="sparkles" class="w-3 h-3 text-purple-500"></i>
+                  <span>✨ スッキリ推敲</span>
+                </button>
+
+                <button onclick="clearCommentHistory()" class="text-[10px] t-text-muted hover:text-rose-500 cursor-pointer">履歴クリア</button>
+                <button onclick="toggleCommentBox(false)" class="t-text-muted hover:t-text-main p-0.5 cursor-pointer"><i data-lucide="x" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+
+            <div id="comment-history-list" class="hidden max-h-20 overflow-y-auto space-y-1 text-[10px] t-card p-1.5 rounded-lg border border-inherit"></div>
+
+            <div class="flex items-start gap-1.5 min-w-0">
+              <button id="btn-comment-mic" onclick="toggleCommentSpeech()" class="w-8 h-8 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 border border-rose-500/30 flex items-center justify-center transition shrink-0 cursor-pointer mt-0.5" title="声でツッコミを入力（もう一度押して停止）">
+                <i data-lucide="mic" id="comment-mic-icon" class="w-4 h-4"></i>
+              </button>
+              
+              <textarea id="comment-input-text" rows="2" placeholder="マイクまたは入力: 例「オセロを先にやりたい」「手作業ではなくPythonツールで自動化したい」等、複数行で条件を追加できます" class="flex-1 min-w-0 p-2 text-xs t-card border rounded-lg t-text-main focus:outline-none focus:border-sky-500 font-medium resize-none transition-all"></textarea>
+              
+              <button onclick="submitAdviceComment()" id="btn-submit-comment" class="h-8 px-3 btn-brand rounded-lg text-xs font-bold flex items-center gap-1 shrink-0 active:scale-95 cursor-pointer mt-0.5">
+                <span>再考</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 助言直接編集枠 -->
+          <div id="advice-inline-edit-box" class="hidden p-3 rounded-xl border border-sky-500/40 bg-sky-500/5 flex flex-col gap-2 shrink-0 max-h-[300px] overflow-y-auto min-w-0">
+            <div class="flex items-center justify-between text-xs font-bold text-sky-700 dark:text-sky-300 border-b border-inherit pb-1 shrink-0">
+              <span class="flex items-center gap-1"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i> AI実行助言の直接修正</span>
+              <button onclick="cancelInlineAdviceEdit()" class="t-text-muted hover:t-text-main"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div>
+                <label class="block font-bold text-amber-800 dark:text-amber-300 mb-0.5 text-[11px]">⚡ 初手：最速の一手</label>
+                <textarea id="inline-advice-quick" rows="2" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500 resize-none"></textarea>
+              </div>
+              <div>
+                <label class="block font-bold t-text-main mb-0.5 text-[11px]">📋 続きのステップ（1行に1手）</label>
+                <textarea id="inline-advice-steps" rows="2" placeholder="第2手: 〜&#10;第3手: 〜" class="w-full p-2 t-card border rounded-lg t-text-main font-mono focus:outline-none focus:border-sky-500 resize-none"></textarea>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-0.5 text-[11px]">⚠️ 落とし穴の知恵（注釈）</label>
+                <textarea id="inline-advice-pitfall" rows="1" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500 resize-none"></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-1 border-t border-inherit shrink-0">
+              <button onclick="cancelInlineAdviceEdit()" class="px-2.5 py-1 t-text-muted hover:t-text-main text-[11px] font-bold cursor-pointer">キャンセル</button>
+              <button onclick="saveInlineAdviceEdit()" class="px-3.5 py-1 btn-brand rounded-lg text-[11px] font-bold cursor-pointer">保存する</button>
+            </div>
+          </div>
+
+          <!-- 助言表示スクロールエリア -->
+          <div id="advice-scroll-body" class="flex-1 min-h-0 min-w-0 overflow-y-auto pr-1 flex flex-col gap-2.5 text-xs leading-relaxed">
+            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col gap-1 shrink-0 shadow-sm min-w-0">
+              <div class="flex items-center justify-between border-b border-amber-500/20 pb-1">
+                <span class="font-black text-amber-800 dark:text-amber-300 flex items-center gap-1.5 text-xs">
+                  <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
+                  <span>初手：最速の一手</span>
+                </span>
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-600 text-white font-mono font-black shadow-sm" id="label-quick-sub">初手</span>
+              </div>
+              <p id="advice-quick-content" class="text-slate-900 dark:text-slate-100 font-bold leading-relaxed mt-0.5 text-xs break-words">
+                やりたいことを選択すると、今日すぐに着手できる初手（最速の一手）が表示されます。
+              </p>
+            </div>
+
+            <div id="advice-substeps-box" class="p-2.5 rounded-xl t-card-sub border flex flex-col gap-1.5 shadow-sm min-w-0">
+              <div class="flex items-center justify-between border-b border-inherit pb-1">
+                <span class="font-black t-text-main flex items-center gap-1 text-[11px]">
+                  <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-sky-500"></i>
+                  <span>続きのステップ (次の一手・仕上げ)</span>
+                </span>
+                <span class="text-[9px] font-bold t-text-muted" id="label-substeps-hint">※納得したら「メモへ取込」</span>
+              </div>
+              <div id="advice-steps-content" class="space-y-1.5 t-text-main font-medium min-w-0 break-words"></div>
+            </div>
+
+            <div id="advice-pitfall-box" class="border-l-2 border-amber-500/60 bg-amber-500/5 px-2.5 py-1.5 rounded-r-lg flex flex-col gap-0.5 min-w-0">
+              <span class="font-bold text-amber-800 dark:text-amber-400 flex items-center gap-1 text-[11px]">
+                <i data-lucide="alert-triangle" class="w-3 h-3 text-amber-500"></i>
+                <span>ここだけは注意！よくある落とし穴 ＆ 回避の知恵</span>
+              </span>
+              <p id="advice-pitfall-content" class="text-slate-700 dark:text-slate-300 leading-relaxed font-medium mt-0.5 text-[11px] break-words"></p>
+            </div>
+          </div>
+
+          <!-- 操作ボタングループ：3.8 Flash深考 ＆ 壁打ちプロンプトコピーボタン -->
+          <div class="pt-1.5 border-t border-inherit flex items-center justify-between gap-2 shrink-0 relative min-w-0">
+            <div class="flex items-center gap-2 shrink-0">
+              <button id="btn-deep-dive" onclick="executeDeepDiveAdvice()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-mono font-bold text-[10px] flex items-center gap-1.5 transition shadow-sm disabled:opacity-50 active:scale-95 cursor-pointer">
+                <i data-lucide="brain" class="w-3.5 h-3.5"></i>
+                <span id="btn-deep-dive-text">🧠 3.8 Flash深考</span>
+              </button>
+
+              <div class="relative">
+                <button id="btn-prompt-export" onclick="togglePromptCopyMenu(event)" class="px-2.5 py-1.5 rounded-lg border t-card hover:opacity-90 text-sky-700 dark:text-sky-300 font-mono font-bold text-[10px] flex items-center gap-1 transition shadow-sm cursor-pointer" title="外部Geminiでブレストするためのプロンプトをコピー">
+                  <i data-lucide="copy" class="w-3 h-3 text-sky-500"></i>
+                  <span>📋 壁打ちプロンプト</span>
+                  <i data-lucide="chevron-up" id="icon-prompt-menu" class="w-3 h-3 opacity-60"></i>
+                </button>
+
+                <div id="menu-prompt-copy" class="hidden absolute left-0 bottom-full mb-1.5 w-64 t-card border rounded-xl shadow-2xl py-1 z-30 text-xs">
+                  <button type="button" onclick="copyGeminiPrompt('theme')" class="w-full px-3 py-2 text-left hover:bg-sky-500/10 flex flex-col gap-0.5 transition cursor-pointer">
+                    <span class="font-bold t-text-main flex items-center gap-1">
+                      <i data-lucide="file-text" class="w-3.5 h-3.5 text-sky-500"></i>
+                      <span>この論点を深掘りコピー</span>
+                    </span>
+                    <span class="text-[10px] t-text-muted leading-tight">Why＋選択中論点＋初手を外部Geminiで具体化</span>
+                  </button>
+                  <div class="border-t border-inherit/40 my-0.5"></div>
+                  <button type="button" onclick="copyGeminiPrompt('all')" class="w-full px-3 py-2 text-left hover:bg-sky-500/10 flex flex-col gap-0.5 transition cursor-pointer">
+                    <span class="font-bold t-text-main flex items-center gap-1">
+                      <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i>
+                      <span>構想全体（全テーマ）をコピー</span>
+                    </span>
+                    <span class="text-[10px] t-text-muted leading-tight">複数機能の優先順位や全体構成を外部Geminiでブレスト</span>
+                  </button>
+                </div>
+              </div>
+
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 t-text-muted font-bold">⚡上限時3.5自動</span>
+            </div>
+
+            <span class="text-[10px] t-text-muted flex items-center gap-1 font-bold truncate max-w-[150px] shrink-0">
+              <i data-lucide="link" class="w-3 h-3 text-sky-500 shrink-0"></i>
+              <span id="advice-linked-task-label" class="t-text-main truncate">連動中</span>
+            </span>
+          </div>
+
+          <!-- 3.8深考レポート枠 -->
+          <div id="deep-dive-result-box" class="hidden mt-1 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-xs t-text-sub space-y-1.5 leading-relaxed max-h-36 overflow-y-auto min-w-0">
+            <div class="flex items-center justify-between text-[11px] font-bold border-b border-inherit pb-0.5">
+              <span class="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
+                <i data-lucide="sparkles" class="w-3 h-3"></i>
+                <span>3.8 Flash 深考レポート</span>
+              </span>
+              <button onclick="document.getElementById('deep-dive-result-box').classList.add('hidden')" class="t-text-muted hover:t-text-main p-0.5 cursor-pointer"><i data-lucide="x" class="w-3 h-3"></i></button>
+            </div>
+            <div id="deep-dive-content" class="text-[11px] space-y-1 font-medium break-words"></div>
+          </div>
+
+        </div>
+
+        <!-- ================= 🧭 視線動線一致：中央ペイン最下部スマートガイダンスコンソール ================= -->
+        <div id="smart-context-banner" class="guidance-bar-container border rounded-xl px-3 py-2 shrink-0 flex items-center gap-2.5 shadow-sm transition-all min-w-0">
+          <span id="banner-status-badge" class="px-2 py-0.5 rounded-lg font-mono text-[9px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 shadow-sm">
+            <i data-lucide="compass" class="w-3 h-3"></i>
+            <span id="banner-status-title">待機中</span>
+          </span>
+          <div class="flex-1 min-w-0 flex flex-col justify-center">
+            <p id="banner-action-guide" class="font-black text-[11px] leading-tight truncate select-text">
+              左ペインでアクションを選択するか、右ペインのマイクで新しいアイデアを話してください。
+            </p>
+            <p id="banner-context-insight" class="text-[10px] font-mono leading-tight truncate mt-0.5 opacity-90 select-text">
+              * 初手を実行したら「メモへ取込」を押してチェックリスト化しましょう。
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==========================================
+         【右ペイン】壁打ち＆アイデア入力エリア（min-w-0 ロック ＆ モード明示）
+         ========================================== -->
+    <section id="pane-input" class="flex flex-col h-full min-h-0 min-w-0 w-full border rounded-2xl p-3.5 t-pane shadow-sm transition-colors duration-200 overflow-hidden">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-inherit shrink-0 gap-1.5">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="p-1.5 rounded-lg bg-rose-500/15 text-rose-500 shrink-0">
+            <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+          </span>
+          <h2 class="font-black text-xs tracking-wide t-text-main truncate">
+            壁打ち・アイデア入力
+          </h2>
+        </div>
+
+        <!-- ターゲット入力モード明示バッジ ＆ 新規切替ボタン -->
+        <div class="flex items-center gap-1 min-w-0 shrink-0">
+          <span id="badge-input-mode" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 truncate max-w-[130px]" title="現在の入力ターゲット">
+            ✨ 新規アイデア
+          </span>
+          <button id="btn-switch-to-new-input" onclick="switchToNewIdeaMode()" class="hidden text-[10px] px-2 py-0.5 rounded-md t-card border text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 font-bold transition shrink-0 cursor-pointer" title="選択中の構想編集を解除し、新規アイデア入力に戻す">
+            ＋ 新規に切替
+          </button>
+        </div>
+      </div>
+
+      <!-- マイクステータスボックス -->
+      <div id="mic-status-box" class="my-2 p-2 rounded-xl t-card border flex items-center justify-between gap-2 shrink-0 transition-all min-w-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <button id="btn-toggle-mic" class="w-8 h-8 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 border border-rose-500/30 flex items-center justify-center transition shadow-sm group shrink-0 cursor-pointer">
+            <i data-lucide="mic" id="mic-icon" class="w-4 h-4"></i>
+          </button>
+          <div class="min-w-0">
+            <p id="mic-status-text" class="text-[11px] font-bold t-text-sub truncate">停止中</p>
+            <p class="text-[9px] t-text-muted">ボタンで発話</p>
+          </div>
+        </div>
+        <div id="mic-indicator" class="hidden flex items-center gap-0.5 shrink-0">
+          <span class="w-1 h-3 bg-rose-500 rounded-full animate-bounce"></span>
+          <span class="w-1 h-4 bg-rose-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+          <span class="w-1 h-2 bg-rose-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+          <span class="text-[9px] font-mono text-rose-500 font-bold ml-1">録音中</span>
+        </div>
+      </div>
+
+      <!-- 入力エリア＆深掘りカード -->
+      <div class="flex-1 min-h-0 min-w-0 flex flex-col gap-1.5 my-0.5 overflow-y-auto">
+        <div class="px-1 text-[10px] t-text-muted flex items-center justify-between font-mono shrink-0">
+          <span class="truncate">💡 ヒント: ①やりたいこと ②きっかけ ③ゴール</span>
+          <span class="text-[9px] opacity-75 shrink-0">※なくてもOK</span>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] t-text-muted shrink-0 font-bold gap-1">
+          <span class="truncate">発話テキスト</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button id="btn-deep-ask" onclick="askAiForMissingDetails()" class="px-2 py-0.5 rounded-md bg-sky-500/15 hover:bg-sky-500/25 text-sky-700 dark:text-sky-300 border border-sky-500/30 text-[10px] font-black flex items-center gap-1 transition shadow-sm cursor-pointer" title="AIが思考内容をチェックし、不足観点を優しく引き出します">
+              <i data-lucide="help-circle" class="w-3 h-3 text-sky-500"></i>
+              <span id="label-deep-ask">❓ 不足を深掘り</span>
+            </button>
+
+            <button id="btn-polish-text" onclick="polishInputTextWithAI()" class="px-2 py-0.5 rounded-md bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1 transition shadow-sm cursor-pointer" title="段落改行と1文の文脈チェックを行い、読みやすく美しい日本語に整形します">
+              <i data-lucide="sparkles" class="w-3 h-3 text-purple-500"></i>
+              <span>✨ スッキリ推敲</span>
+            </button>
+            <button id="btn-clear-text" class="text-[10px] t-text-muted hover:text-rose-500 cursor-pointer">クリア</button>
+          </div>
+        </div>
+
+        <!-- テキストエリア本体 -->
+        <textarea id="input-text" placeholder="マイク発話内容またはアイデア・メモ（思いつきだけでOK。話した後に「✨ スッキリ推敲」で整えられます）" class="w-full flex-1 min-h-[90px] p-2.5 t-card border rounded-xl text-xs t-text-main font-medium placeholder-slate-400 focus:outline-none focus:border-sky-500 transition resize-none"></textarea>
+
+        <!-- AI深掘り受容質問カード -->
+        <div id="deep-ask-box" class="hidden p-2.5 rounded-xl border border-sky-500/40 bg-sky-500/10 flex flex-col gap-1.5 transition-all text-xs shrink-0 shadow-sm animate-in fade-in min-w-0">
+          <div class="flex items-center justify-between text-sky-700 dark:text-sky-300 font-bold border-b border-sky-500/20 pb-1">
+            <span class="flex items-center gap-1.5"><i data-lucide="bot" class="w-4 h-4 text-sky-500"></i> 🤖 AIからの深掘り問いかけ</span>
+            <button type="button" onclick="closeDeepAskBox()" class="t-text-muted hover:t-text-main p-0.5 cursor-pointer"><i data-lucide="x" class="w-3 h-3"></i></button>
+          </div>
+          <p id="deep-ask-question" class="t-text-main font-bold leading-relaxed text-[11px] whitespace-pre-wrap break-words"></p>
+          <div class="flex items-center justify-between pt-1 text-[10px] border-t border-inherit/30">
+            <span class="t-text-muted font-medium">※未定なら答えずそのまま「ストック」でOK</span>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="answerDeepAskWithMic()" class="px-2 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1 transition cursor-pointer">
+                <i data-lucide="mic" class="w-3 h-3"></i> 声で答える
+              </button>
+              <button type="button" onclick="closeDeepAskBox()" class="px-2 py-0.5 rounded t-card border t-text-muted hover:t-text-main font-bold transition cursor-pointer">
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="raw-voice-accordion" class="hidden mt-1 flex flex-col border border-inherit rounded-xl overflow-hidden bg-slate-100/60 dark:bg-slate-900/60 shrink-0 min-w-0">
+          <button type="button" onclick="toggleRawVoiceView()" class="w-full px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between hover:t-text-main cursor-pointer">
+            <span class="flex items-center gap-1 truncate"><i data-lucide="mic" class="w-3 h-3 shrink-0"></i> 元の生発話テキストを確認</span>
+            <i data-lucide="chevron-down" id="raw-voice-icon" class="w-3 h-3 transition-transform shrink-0"></i>
+          </button>
+          <div id="raw-voice-body" class="hidden p-2 text-[11px] font-mono text-slate-600 dark:text-slate-300 border-t border-inherit/40 space-y-1.5 leading-relaxed bg-white/40 dark:bg-black/20 break-words">
+            <p id="raw-voice-text" class="whitespace-pre-wrap select-all"></p>
+            <div class="flex items-center justify-end gap-2 pt-1 border-t border-inherit/30 text-[10px]">
+              <button onclick="restoreRawText()" class="text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer">↩️ 生テキストに戻す</button>
+              <button onclick="copyRawText()" class="t-text-muted hover:t-text-main font-bold cursor-pointer">📋 コピー</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-1.5 border-t border-inherit shrink-0">
+        <div id="drop-zone" class="border border-dashed border-inherit hover:border-sky-500 rounded-xl p-2 text-center t-card cursor-pointer transition">
+          <input type="file" id="file-input" class="hidden" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
+          <div class="flex items-center justify-center gap-1.5 pointer-events-none">
+            <i data-lucide="paperclip" class="w-3.5 h-3.5 t-text-muted"></i>
+            <p class="text-[10px] t-text-sub font-bold">資料添付</p>
+          </div>
+        </div>
+        <div id="attachment-list" class="mt-1 flex flex-col gap-1 max-h-[45px] overflow-y-auto pr-1"></div>
+      </div>
+
+      <div class="mt-2 pt-2 border-t border-inherit space-y-2 shrink-0">
+        <div class="flex items-center justify-between p-0.5 t-card-sub rounded-lg font-mono text-[10px]">
+          <button id="mode-btn-lite" onclick="setMode('lite')" class="flex-1 py-1 px-1 rounded-md font-black transition flex items-center justify-center gap-1 bg-sky-600 text-white shadow-sm cursor-pointer">
+            <i data-lucide="zap" class="w-2.5 h-2.5"></i>
+            <span>3.5 Lite</span>
+          </button>
+          <button id="mode-btn-deep" onclick="setMode('deep')" class="flex-1 py-1 px-1 rounded-md font-bold transition flex items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:t-text-main cursor-pointer">
+            <i data-lucide="brain" class="w-2.5 h-2.5"></i>
+            <span>3.8 Flash</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1.5">
+          <button id="btn-stock-idea" onclick="handleStockButtonClick()" class="py-2.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-xs shadow flex items-center justify-center gap-1 transition active:scale-[0.99] disabled:opacity-50 cursor-pointer">
+            <i data-lucide="lightbulb" id="icon-stock-btn" class="w-3.5 h-3.5"></i>
+            <span id="label-stock-btn" class="truncate">💡 構想ストック</span>
+          </button>
+
+          <button id="btn-process-ai" onclick="processWithAI('action')" class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow flex items-center justify-center gap-1 transition active:scale-[0.99] disabled:opacity-50 cursor-pointer" title="最初から実行を決めている場合、左ペインのアクションまで一気に生成します">
+            <i data-lucide="rocket" class="w-3.5 h-3.5"></i>
+            <span class="truncate">🚀 アクション化</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= モーダル群 ================= -->
+
+  <!-- メモ取り込み安全確認モーダル -->
+  <div id="import-confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="t-card border rounded-2xl max-w-sm w-full p-5 shadow-2xl relative">
+      <div class="flex items-center gap-2 pb-2 border-b border-inherit text-sky-600 dark:text-sky-400 font-black text-sm">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span>進捗メモへの助言取り込み</span>
+      </div>
+      <div class="py-3 text-xs space-y-2">
+        <p class="t-text-main font-bold" id="import-confirm-message">
+          このアクションにはすでに進捗メモがあります。どのように取り込みますか？
+        </p>
+        <p class="text-[11px] t-text-muted leading-relaxed">
+          「上書き」を選ぶと現在の進捗チェックはリセットされます。「追記」を選ぶと現在の内容を残したまま末尾に追加します。
+        </p>
+      </div>
+      <div class="pt-3 border-t border-inherit flex items-center justify-end gap-2">
+        <button onclick="closeImportConfirmModal()" class="px-3 py-1.5 rounded-lg border t-card hover:opacity-80 text-xs font-bold t-text-muted hover:t-text-main transition cursor-pointer">
+          キャンセル
+        </button>
+        <button onclick="executeImportAdvice('append')" class="px-3 py-1.5 rounded-lg border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 text-xs font-bold transition cursor-pointer">
+          末尾に追記
+        </button>
+        <button onclick="executeImportAdvice('overwrite')" class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition shadow-sm cursor-pointer">
+          上書き取込
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手動 やりたいこと登録モーダル（開始日・工数対応、文字数50/120拡張） -->
+  <div id="add-task-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="t-card border rounded-2xl max-w-lg w-full p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-inherit">
+        <h3 class="font-black text-sm t-text-main flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-sky-500"></i> やりたいことの新規追加
+        </h3>
+        <button onclick="closeAddTaskModal()" class="t-text-muted hover:t-text-main cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="py-3 space-y-3 text-xs">
+        <div class="grid grid-cols-[3fr_2fr] gap-2">
+          <div>
+            <label class="block font-bold t-text-main mb-1">やりたいこと名称 <span class="text-rose-500">*</span></label>
+            <input type="text" id="add-task-title" placeholder="例: 漫画本の年末仕分け" maxlength="50" class="w-full p-2 t-card border rounded-lg t-text-main font-bold focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block font-bold t-text-sub mb-1">区分 (カテゴリ)</label>
+            <input type="text" id="add-task-category" list="category-datalist" placeholder="一般 / 開発 等" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold t-text-sub mb-1">内容・概要 (ゴール)</label>
+          <input type="text" id="add-task-description" placeholder="例: 本棚に入り切らない漫画を売却・保管・電子化に仕分ける" maxlength="120" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500">
+        </div>
+
+        <div>
+          <label class="block font-bold t-text-sub mb-1">きっかけ・思考背景 (任意：1行メモ)</label>
+          <input type="text" id="add-task-reason" placeholder="例: 部屋の居住スペースを広げて快適にしたい" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500">
+        </div>
+
+        <!-- 日程＆工数 4項目グリッド（ガント完全連動） -->
+        <div class="grid grid-cols-4 gap-2 p-2.5 rounded-xl t-card-sub border">
+          <div>
+            <label class="block font-bold t-text-sub mb-1 text-[11px]">開始日</label>
+            <input type="date" id="add-task-start" class="w-full p-1.5 t-card border rounded-lg t-text-main font-mono text-[11px] focus:outline-none focus:border-sky-500 cursor-pointer">
+          </div>
+          <div>
+            <label class="block font-bold t-text-sub mb-1 text-[11px]">目標日</label>
+            <input type="date" id="add-task-due" class="w-full p-1.5 t-card border rounded-lg t-text-main font-mono text-[11px] focus:outline-none focus:border-sky-500 cursor-pointer">
+          </div>
+          <div>
+            <label class="block font-bold t-text-sub mb-1 text-[11px]">想定工数(h)</label>
+            <input type="number" id="add-task-hours" min="0.5" max="1000" step="0.5" value="4" class="w-full p-1.5 t-card border rounded-lg t-text-main font-mono font-bold text-[11px] focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block font-bold t-text-sub mb-1 text-[11px]">重要度</label>
+            <select id="add-task-priority" class="w-full p-1.5 t-card border rounded-lg t-text-main font-bold text-[11px] focus:outline-none focus:border-sky-500 cursor-pointer">
+              <option value="中">中 (通常)</option>
+              <option value="高">高 (最優先)</option>
+              <option value="低">低 (後回し可)</option>
+              <option value="未定">未定（仕込み中）</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 space-y-1.5">
+          <label class="flex items-center gap-2 cursor-pointer font-extrabold text-sky-700 dark:text-sky-300 text-xs">
+            <input type="checkbox" id="add-task-ai-reverse" checked class="w-4 h-4 rounded text-sky-600 focus:ring-0 cursor-pointer">
+            <span>AIで発想原点(Why)・論点(What)・初手を逆算生成</span>
+          </label>
+          <p class="text-[10px] t-text-sub leading-relaxed pl-6 font-medium">
+            ※入力内容から初手とそれに続く次の一手を自動構築します。
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-inherit flex justify-end gap-2">
+        <button onclick="closeAddTaskModal()" class="px-3 py-1.5 t-text-muted hover:t-text-main text-xs font-bold cursor-pointer">キャンセル</button>
+        <button onclick="saveNewTaskManual()" id="btn-save-new-task" class="px-4 py-1.5 btn-brand font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm cursor-pointer">
+          <span>登録する</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- バージョン更新履歴モーダル -->
+  <div id="version-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="t-card border rounded-2xl max-w-xl w-full p-5 shadow-2xl relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-inherit shrink-0">
+        <h3 class="font-black text-sm t-text-main flex items-center gap-2">
+          <i data-lucide="history" class="w-4 h-4 text-sky-500"></i>
+          バージョン更新履歴（最新10件）
+        </h3>
+        <button onclick="closeVersionModal()" class="t-text-muted hover:t-text-main p-1 rounded cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto py-3 space-y-2 text-xs font-mono" id="version-history-list"></div>
+      <div class="pt-3 border-t border-inherit flex items-center justify-between text-[11px] t-text-muted shrink-0 font-bold">
+        <span>プロジェクト現在日: <strong id="lbl-system-date" class="t-text-main font-black">2026-11-04</strong></span>
+        <button onclick="closeVersionModal()" class="px-4 py-1.5 btn-brand rounded-lg text-xs font-bold cursor-pointer">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 総合ガイドブック（Studio連携手順 ＆ ガント連携追記済） -->
+  <div id="guide-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 sm:p-6">
+    <div class="t-card border rounded-2xl max-w-5xl w-full p-7 shadow-2xl relative max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3.5 border-b border-inherit shrink-0">
+        <h3 class="font-black text-lg t-text-main flex items-center gap-2.5">
+          <i data-lucide="sparkles" class="w-5 h-5 text-sky-500"></i>
+          Wish & Action コックピット 総合ガイドブック ＆ 操作マニュアル
+        </h3>
+        <button onclick="closeGuideModal()" class="t-text-muted hover:t-text-main p-1.5 rounded-lg transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 border-b border-inherit py-2 mt-2 text-xs shrink-0 overflow-x-auto font-bold">
+        <button id="guide-tab-btn-1" onclick="switchGuideTab(1)" class="px-3.5 py-1.5 rounded-lg bg-sky-600 text-white shadow-sm flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer">
+          <i data-lucide="compass" class="w-3.5 h-3.5"></i> ① 哲学 ＆ モーダルレス設計 (Why)
+        </button>
+        <button id="guide-tab-btn-2" onclick="switchGuideTab(2)" class="px-3.5 py-1.5 rounded-lg t-card-sub border t-text-muted hover:t-text-main flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> ② 実行サイクル ＆ ガント連携 (How)
+        </button>
+        <button id="guide-tab-btn-3" onclick="switchGuideTab(3)" class="px-3.5 py-1.5 rounded-lg t-card-sub border t-text-muted hover:t-text-main flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer">
+          <i data-lucide="cpu" class="w-3.5 h-3.5"></i> ③ 機能一覧 ＆ 画面レイアウト共通性 (What)
+        </button>
+        <button id="guide-tab-btn-4" onclick="switchGuideTab(4)" class="px-3.5 py-1.5 rounded-lg t-card-sub border t-text-muted hover:t-text-main flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer">
+          <i data-lucide="send" class="w-3.5 h-3.5 text-sky-400"></i> ④ Thinking Studio 連携 ＆ 安全データ管理
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto py-5 pr-2 text-[13px] t-text-sub leading-relaxed space-y-5 font-medium">
+        <div id="guide-tab-1" class="space-y-4">
+          <div class="p-5 rounded-2xl t-card-sub border space-y-3">
+            <h4 class="font-black t-text-main text-base flex items-center gap-2">
+              <i data-lucide="target" class="w-5 h-5 text-sky-500"></i>
+              本システムの目的：やりたいことをタスクの墓場にしない
+            </h4>
+            <p class="leading-relaxed">
+              仕事のToDoリストは「やらされること」で溢れていますが、自分の知的好奇心、ゲーム開発、DIYといった<strong>「本当にやりたいこと（Wish）」</strong>は、忙しさに追われていつの間にか忘れ去られ、タスクの墓場に眠ってしまいます。
+            </p>
+            <p class="leading-relaxed">
+              単に「やること」だけをメモしても、数日後には「なぜこれをやろうとしたのか？」という熱量が冷めてしまいます。本システムは、<strong>「発想の原点（Why）」を大切に保持しながら、AIとの対話によって今日すぐ着手できる【初手】を拓き、着実にカタチにする（Action）</strong>ためのパーソナル司令塔です。
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl t-card-sub border space-y-3">
+            <h4 class="font-black t-text-main text-base flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+              <i data-lucide="eye" class="w-5 h-5"></i>
+              文脈（コンテキスト）を途切れさせない「完全モーダルレス思想」
+            </h4>
+            <p class="leading-relaxed">
+              従来の画面全体を暗転させる「ポップアップ別画面（モーダル）」は、周辺のタスクや思考背景が見えなくなり、思考のフロー状態を断絶させていました。本コックピットでは、<strong>鉛筆マークを押した「その場」でカードが下へスッと広がる完全インライン編集</strong>を採用。「左のアクションを見ながら中央の論点を直す」「右のメモを見比べながら目標日を決める」という、コックピット本来の統合的な思考環境を提供します。
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl t-card-sub border space-y-3">
+            <h4 class="font-black t-text-main text-base flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <i data-lucide="zap" class="w-5 h-5"></i>
+              優先順位設計：主役は常に「初手と手順 (How)」
+            </h4>
+            <p class="leading-relaxed">
+              行動を起こす瞬間、最も視界に入るべきは「今日いま何をするか」という助言(How)です。発想背景(Why)がどれだけ長文でも普段は2行にスマート折りたたみし、論点(What)もチップで選択集中させることで、<strong>主役であるAI実行助言が常に画面半分以上の広大なスペースを占有</strong>し、行動を後押しします。
+            </p>
+          </div>
+        </div>
+
+        <div id="guide-tab-2" class="hidden space-y-4">
+          <div class="p-5 rounded-2xl t-card-sub border space-y-4">
+            <h4 class="font-black t-text-main text-base flex items-center gap-2 text-sky-600 dark:text-sky-400">
+              <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+              思考から実行・ガント俯瞰へ至る「実行サイクル」
+            </h4>
+            <div class="space-y-3.5 pl-2">
+              <div class="flex items-start gap-3">
+                <span class="w-6 h-6 rounded-lg bg-rose-500/15 text-rose-500 font-mono font-black flex items-center justify-center shrink-0 text-xs mt-0.5 border border-rose-500/30">1</span>
+                <div>
+                  <h5 class="font-black t-text-main text-sm">【話す・推敲】右ペインで話し、「✨ スッキリ推敲」で整える</h5>
+                  <p class="text-xs t-text-sub mt-0.5 leading-relaxed">右ペインのマイクを起動し、思いついたアイデアを声に出してお話しください。「✨ スッキリ推敲」ボタンを押せば、話した情報量を削らず、フィラーと言い直しだけを自然な日本語に整えます。</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-mono font-black flex items-center justify-center shrink-0 text-xs mt-0.5 border border-indigo-500/30">2</span>
+                <div>
+                  <h5 class="font-black t-text-main text-sm">【構想ストック ⇄ ガラガラポン再構成】温め棚での熟成</h5>
+                  <p class="text-xs t-text-sub mt-0.5 leading-relaxed">まだ納期を決めずに温めたいアイデアは「💡 構想ストック」へ。後から追加の思考を話して「🔄 構想を再構成」を押せば、WhyもWhatも最新思考へと丸ごとガラガラポン再構成できます。</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono font-black flex items-center justify-center shrink-0 text-xs mt-0.5 border border-amber-500/30">3</span>
+                <div>
+                  <h5 class="font-black t-text-main text-sm">【初手助言 ＆ 音声ツッコミ】3手のステップを対話で確定</h5>
+                  <p class="text-xs t-text-sub mt-0.5 leading-relaxed">AIが「今日すぐできる5分アクション（初手）」＋「第2手」「第3手」を提示。「ツッコミ」機能で声やテキストで条件を足し、AIと壁打ちして納得の手順を作ります。</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-6 h-6 rounded-lg bg-sky-500/15 text-sky-700 dark:text-sky-300 font-mono font-black flex items-center justify-center shrink-0 text-xs mt-0.5 border border-sky-500/30">4</span>
+                <div>
+                  <h5 class="font-black t-text-main text-sm">【メモへ取込 ＆ ガントチャート完全連動】タイムライン俯瞰</h5>
+                  <p class="text-xs t-text-sub mt-0.5 leading-relaxed">「📥 メモへ取込」を押すとチェックリストが生成。ヘッダーの「📊 ガント」を押せば、別ファイルガントチャートが開き、工数とタイムラインが完全にリアルタイム連動します。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="guide-tab-3" class="hidden space-y-4">
+          <div class="p-5 rounded-2xl t-card-sub border space-y-4">
+            <h4 class="font-black t-text-main text-base flex items-center gap-2 text-sky-600 dark:text-sky-400">
+              <i data-lucide="cpu" class="w-5 h-5"></i>
+              コックピット機能リファレンス ＆ 空間レイアウト共通仕様
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div class="p-3 rounded-xl t-card border space-y-1.5">
+                <span class="font-black t-text-main flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
+                  <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> ガントチャート一元連携
+                </span>
+                <p class="t-text-sub leading-relaxed">コックピットのタスクマスターを直接共有。開始日・想定工数も透過的に保持され、手動インポート不要で完全同期します。</p>
+              </div>
+              <div class="p-3 rounded-xl t-card border space-y-1.5">
+                <span class="font-black t-text-main flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                  <i data-lucide="compass" class="w-3.5 h-3.5"></i> スマートガイダンスゾーン
+                </span>
+                <p class="t-text-sub leading-relaxed">中央ペイン最下部で「次の一手」を常時ナビゲート。迷うことなく操作を前に進められます。</p>
+              </div>
+              <div class="p-3 rounded-xl t-card border space-y-1.5">
+                <span class="font-black t-text-main flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-500"></i> 仕込み中（未設定）の安全保護
+                </span>
+                <p class="t-text-sub leading-relaxed">目標日未設定のタスクは勝手に仮日程で上書きされず、「目標日未設定」として安全に保護されます。</p>
+              </div>
+              <div class="p-3 rounded-xl t-card border space-y-1.5">
+                <span class="font-black t-text-main flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 音声の「✨ スッキリ推敲」
+                </span>
+                <p class="t-text-sub leading-relaxed">話した文量を削らず、言い直しだけを自然な日本語に整形。生テキストもアコーディオンで常時確認可能。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="guide-tab-4" class="hidden space-y-4">
+          <div class="p-5 rounded-2xl t-card-sub border space-y-4">
+            <h4 class="font-black t-text-main text-base flex items-center gap-2 text-sky-600 dark:text-sky-400">
+              <i data-lucide="send" class="w-5 h-5"></i>
+              Thinking Studio（壁打ち）からの引き継ぎ ＆ 安全データ管理
+            </h4>
+            <div class="space-y-3 text-xs leading-relaxed">
+              <div class="p-3.5 rounded-xl border border-sky-500/30 bg-sky-500/5 space-y-2">
+                <span class="font-black text-sky-700 dark:text-sky-300 flex items-center gap-1.5 text-sm">
+                  <i data-lucide="check-circle" class="w-4 h-4 text-sky-500"></i> Thinking Studioからの安全引き継ぎ手順
+                </span>
+                <ol class="list-decimal pl-4.5 space-y-1.5 font-medium t-text-sub text-xs">
+                  <li><strong>Studio側で合意完了：</strong> Thinking Studioの黒板4番で「🎉 OK！合意完了」を押し、最下部の「🚀 コックピットへ引き継ぐ」ボタンからファイル（<code>cockpit_transfer_xxxx.json</code>）をダウンロードします。</li>
+                  <li><strong>コックピットで追加：</strong> コックピット画面右上の<strong>「🚀 スタジオ引継」</strong>ボタンを押し、そのファイルを選択します。</li>
+                  <li><strong>安全マージ完了：</strong> 既存のタスクや構想は<strong>一切上書きされず、先頭に新しい1件として完全に追加</strong>されます。</li>
+                </ol>
+              </div>
+
+              <div class="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2">
+                <span class="font-black text-amber-800 dark:text-amber-400 flex items-center gap-1.5 text-sm">
+                  <i data-lucide="shield-alert" class="w-4 h-4 text-amber-500"></i> バックアップと復元の厳格ルール（事故防止ガード）
+                </span>
+                <ul class="list-disc pl-4.5 space-y-1 font-medium t-text-sub text-xs">
+                  <li><strong>💾 バックアップ：</strong> 定期的に画面全体の完全データをPCに保存します（ファイル名: <code>wish_action_backup_日付.json</code>）。開始日や工数データもすべて包含されます。</li>
+                  <li><strong>📂 復元：</strong> PCが壊れた時や環境移行時に、バックアップファイルからシステム全体を丸ごと復元します。</li>
+                  <li><strong>誤爆防止ガード：</strong> 万が一「📂 復元」にStudioの引き継ぎファイルを誤って指定した場合は、<strong>既存データが消えるのを防ぐためシステムが自動で読み込みをブロック</strong>します。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-inherit flex justify-end shrink-0">
+        <button onclick="closeGuideModal()" class="px-6 py-2 btn-brand rounded-xl text-xs font-bold transition shadow-sm cursor-pointer">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API設定モーダル -->
+  <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="t-card border rounded-2xl max-w-md w-full p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-inherit">
+        <h3 class="font-black text-sm t-text-main flex items-center gap-2">
+          <i data-lucide="settings" class="w-4 h-4 text-sky-500"></i> システム ＆ カレンダー設定
+        </h3>
+        <button id="btn-close-settings" class="t-text-muted hover:t-text-main cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="py-3 space-y-4 max-h-[75vh] overflow-y-auto pr-1 text-xs">
+        <div>
+          <label class="block font-bold t-text-main mb-1">Google AI Studio (Gemini) API Key</label>
+          <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full p-2 t-card border rounded-lg font-mono t-text-main focus:outline-none focus:border-sky-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold t-text-main mb-1">⚡ 通常モデル (Lite)</label>
+            <input type="text" id="model-lite-input" placeholder="gemini-3.5-flash-lite" class="w-full p-2 t-card border rounded-lg font-mono t-text-main focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block font-bold t-text-main mb-1">🧠 深考モデル (上位)</label>
+            <input type="text" id="model-deep-input" placeholder="gemini-3.8-flash" class="w-full p-2 t-card border rounded-lg font-mono t-text-main focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+        <div class="p-3 rounded-xl t-card-sub border space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Google Calendar OAuth Client ID</label>
+            <span id="google-auth-status-badge" class="text-[10px] px-1.5 py-0.5 rounded-full font-mono bg-slate-500/20 text-slate-500 font-bold">未認証</span>
+          </div>
+          <input type="text" id="google-client-id-input" placeholder="xxxxxxxxxx.apps.googleusercontent.com" class="w-full p-2 t-card border rounded-lg font-mono t-text-main focus:outline-none focus:border-sky-500">
+          <div class="flex items-center justify-between pt-1">
+            <button type="button" id="btn-google-login" onclick="handleGoogleAuth()" class="px-3 py-1.5 bg-white text-slate-900 hover:bg-slate-100 border border-slate-300 font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+              <span id="btn-google-login-text">Googleで認証して接続</span>
+            </button>
+            <button type="button" onclick="disconnectGoogleCalendar()" id="btn-google-disconnect" class="hidden text-xs text-rose-500 font-bold hover:underline cursor-pointer">切断する</button>
+          </div>
+        </div>
+      </div>
+      <div class="pt-3 border-t border-inherit flex justify-end gap-2">
+        <button id="btn-save-key" class="px-4 py-1.5 btn-brand font-bold rounded-lg text-xs transition cursor-pointer">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- テーマ編集モーダル（安全互換維持） -->
+  <div id="edit-theme-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="t-card border rounded-2xl max-w-md w-full p-5 shadow-2xl relative">
+      <h3 class="font-black text-sm t-text-main mb-3 flex items-center gap-2"><i data-lucide="edit-3" class="w-4 h-4 text-sky-500"></i> 実現テーマの修正</h3>
+      <input type="hidden" id="edit-theme-id">
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-[3fr_2fr] gap-2">
+          <div>
+            <label class="block t-text-sub font-bold mb-1">テーマ名</label>
+            <input type="text" id="edit-theme-name" class="w-full p-2 t-card border rounded-lg t-text-main font-bold focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block t-text-sub font-bold mb-1">区分 (カテゴリ)</label>
+            <input type="text" id="edit-theme-category" list="category-datalist" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+        <div>
+          <label class="block t-text-sub font-bold mb-1">具体論点・要約内容</label>
+          <textarea id="edit-theme-content" rows="4" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500 resize-none"></textarea>
+        </div>
+      </div>
+      <div class="mt-4 pt-3 border-t border-inherit flex justify-end gap-2">
+        <button onclick="closeThemeEditModal()" class="px-3 py-1.5 t-text-muted hover:t-text-main text-xs font-bold cursor-pointer">キャンセル</button>
+        <button onclick="saveThemeEdit()" class="px-4 py-1.5 btn-brand font-bold rounded-lg text-xs cursor-pointer">更新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 助言編集モーダル（安全互換維持） -->
+  <div id="edit-advice-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="t-card border rounded-2xl max-w-lg w-full p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-inherit">
+        <h3 class="font-black text-sm t-text-main flex items-center gap-2"><i data-lucide="edit-3" class="w-4 h-4 text-sky-500"></i> AI実行助言の編集</h3>
+        <button onclick="closeEditAdviceModal()" class="t-text-muted hover:t-text-main cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-[11px] t-text-muted mt-2 mb-3">対象テーマ: <strong id="edit-advice-modal-target" class="text-sky-600 dark:text-sky-400"></strong></p>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-amber-800 dark:text-amber-300 mb-1">⚡ 初手：最速の一手</label>
+          <textarea id="edit-advice-quick" rows="2" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500 resize-none"></textarea>
+        </div>
+        <div>
+          <label class="block font-bold t-text-main mb-1">📋 続きのステップ（1行に1手）</label>
+          <textarea id="edit-advice-steps" rows="3" placeholder="第2手: 〜&#10;第3手: 〜" class="w-full p-2 t-card border rounded-lg t-text-main font-mono focus:outline-none focus:border-sky-500 resize-none"></textarea>
+        </div>
+        <div>
+          <label class="block font-bold text-amber-800 dark:text-amber-400 mb-1">⚠️ 落とし穴の助言 ＆ 回避の知恵</label>
+          <textarea id="edit-advice-pitfall" rows="2" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500 resize-none"></textarea>
+        </div>
+      </div>
+      <div class="mt-4 pt-3 border-t border-inherit flex justify-end gap-2">
+        <button onclick="closeEditAdviceModal()" class="px-3 py-1.5 t-text-muted hover:t-text-main text-xs font-bold cursor-pointer">キャンセル</button>
+        <button onclick="saveAdviceEdit()" class="px-4 py-1.5 btn-brand font-bold rounded-lg text-xs cursor-pointer">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- タスク編集モーダル（安全互換維持・開始日/工数/50文字対応） -->
+  <div id="edit-task-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="t-card border rounded-2xl max-w-lg w-full p-5 shadow-2xl relative">
+      <h3 class="font-black text-sm t-text-main mb-3 flex items-center gap-2"><i data-lucide="edit-3" class="w-4 h-4 text-amber-500"></i> アクションの編集・進捗更新</h3>
+      <input type="hidden" id="edit-task-id">
+      <datalist id="category-datalist"></datalist>
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-[3fr_2fr] gap-2">
+          <div>
+            <label class="block t-text-sub font-bold mb-1">やりたいこと名称</label>
+            <input type="text" id="edit-task-title" maxlength="50" class="w-full p-2 t-card border rounded-lg t-text-main font-bold focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block t-text-sub font-bold mb-1">区分 (カテゴリ)</label>
+            <input type="text" id="edit-task-category" list="category-datalist" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block t-text-sub font-bold mb-1">内容・概要 (ゴール)</label>
+          <input type="text" id="edit-task-description" maxlength="120" class="w-full p-2 t-card border rounded-lg t-text-main font-medium focus:outline-none focus:border-sky-500">
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-500/10 border border-inherit space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-1.5 font-black t-text-main text-xs"><i data-lucide="activity" class="w-3.5 h-3.5 text-sky-500"></i> 進捗率: <span id="label-edit-progress-percent" class="font-mono font-bold text-sky-600 dark:text-sky-400">0%</span></label>
+            <span id="label-edit-progress-mode" class="text-[10px] t-text-muted font-bold">手動設定 (33%刻み)</span>
+          </div>
+
+          <div id="edit-progress-preset-buttons" class="grid grid-cols-4 gap-1 font-mono text-[10px] font-bold">
+            <button type="button" onclick="setEditProgressPercent(0)" class="py-1 rounded-lg t-card border t-text-muted hover:t-text-main cursor-pointer">0% 未</button>
+            <button type="button" onclick="setEditProgressPercent(33)" class="py-1 rounded-lg t-card border text-sky-600 dark:text-sky-400 cursor-pointer">33% 初手</button>
+            <button type="button" onclick="setEditProgressPercent(66)" class="py-1 rounded-lg t-card border text-sky-600 dark:text-sky-400 cursor-pointer">66% 順調</button>
+            <button type="button" onclick="setEditProgressPercent(100)" class="py-1 rounded-lg t-card border text-emerald-600 dark:text-emerald-400 font-black cursor-pointer">100% 完</button>
+          </div>
+          <input type="hidden" id="edit-task-progress-percent" value="0">
+
+          <div>
+            <label class="block text-[11px] t-text-sub font-bold mb-1">進捗メモ（行頭に [ ] を置くとチェックボックス化されます）</label>
+            <textarea id="edit-task-progress-note" rows="3" placeholder="※中央の『メモへ取込』を押すと自動でチェックリストが反映されます" class="w-full p-2 t-card border focus:border-sky-500 rounded-lg text-xs t-text-main focus:outline-none resize-none font-mono"></textarea>
+          </div>
+        </div>
+
+        <!-- 日程＆工数 4項目グリッド -->
+        <div class="grid grid-cols-4 gap-2">
+          <div>
+            <label class="block t-text-sub font-bold mb-1 text-[11px]">開始日</label>
+            <input type="date" id="edit-task-start" class="w-full p-1.5 t-card border rounded-lg t-text-main font-mono text-[11px] focus:outline-none focus:border-sky-500 cursor-pointer">
+          </div>
+          <div>
+            <label class="block t-text-sub font-bold mb-1 text-[11px]">目標日</label>
+            <input type="date" id="edit-task-due" class="w-full p-1.5 t-card border rounded-lg t-text-main font-mono text-[11px] focus:outline-none focus:border-sky-500 cursor-pointer">
+          </div>
+          <div>
+            <label class="block t-text-sub font-bold mb-1 text-[11px]">想定工数(h)</label>
+            <input type="number" id="edit-task-hours" min="0.5" max="1000" step="0.5" value="4" class="w-full p-1.5 t-card border rounded-lg t-text-main font-mono font-bold text-[11px] focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block t-text-sub font-bold mb-1 text-[11px]">重要度</label>
+            <select id="edit-task-priority" class="w-full p-1.5 t-card border rounded-lg t-text-main font-bold text-[11px] focus:outline-none focus:border-sky-500 cursor-pointer">
+              <option value="高">高 (最優先)</option>
+              <option value="中">中 (通常)</option>
+              <option value="低">低 (後回し可)</option>
+              <option value="未定">未定（仕込み中）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 pt-3 border-t border-inherit flex justify-end gap-2">
+        <button onclick="closeEditModal()" class="px-3 py-1.5 t-text-muted hover:t-text-main text-xs font-bold cursor-pointer">キャンセル</button>
+        <button onclick="saveTaskEdit()" class="px-4 py-1.5 btn-brand font-bold rounded-lg text-xs cursor-pointer">保存・更新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🌟 システム全体の完全バックアップ保存（エクスポート） -->
+  <script>
+    function exportCurrentDataToJson() {
+      try {
+        const sessions = window.cockpitSessions || [];
+        const tasks = window.cockpitTasks || [];
+        
+        const exportPayload = {
+          exportTimestamp: new Date().toISOString(),
+          version: 'v1.0.0',
+          source: 'Wish & Action Cockpit Backup',
+          sessions: sessions,
+          tasks: tasks
+        };
+
+        const jsonStr = JSON.stringify(exportPayload, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const now = new Date();
+        const dateStr = now.getFullYear() +
+          String(now.getMonth() + 1).padStart(2, '0') +
+          String(now.getDate()).padStart(2, '0') + '_' +
+          String(now.getHours()).padStart(2, '0') +
+          String(now.getMinutes()).padStart(2, '0');
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `wish_action_backup_${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        alert('💾 現在の全データをバックアップファイルとしてPCに保存しました。\n\nファイル名: wish_action_backup_' + dateStr + '.json');
+      } catch (e) {
+        console.error('バックアップ失敗:', e);
+        alert('バックアップの保存に失敗しました: ' + e.message);
+      }
+    }
+  </script>
+
+</body>
+</html>
