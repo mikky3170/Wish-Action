@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="ja" class="theme-dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マイ・ガントチャート | Wish & Action コックピット連携版</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 🎨 洗練された統一コックピット・テーマ（ライト / ダーク / ポップ） */
+    html.theme-light {
+      --g-bg-body: #f8fafc;
+      --g-bg-header: #ffffff;
+      --g-border: #cbd5e1;
+      --g-bg-pane: #ffffff;
+      --g-bg-sub: #f1f5f9;
+      --g-text-main: #0f172a;
+      --g-text-sub: #334155;
+      --g-text-muted: #64748b;
+      --g-accent: #0284c7;
+      color-scheme: light;
+    }
+
+    html.theme-dark {
+      --g-bg-body: #090d16;
+      --g-bg-header: #0f172a;
+      --g-border: #243044;
+      --g-bg-pane: #0d1321;
+      --g-bg-sub: #151d2e;
+      --g-text-main: #ffffff;
+      --g-text-sub: #cbd5e1;
+      --g-text-muted: #94a3b8;
+      --g-accent: #38bdf8;
+      color-scheme: dark;
+    }
+
+    html.theme-pop {
+      --g-bg-body: #11071f;
+      --g-bg-header: #1a0b30;
+      --g-border: #581c87;
+      --g-bg-pane: #1a0c33;
+      --g-bg-sub: #261247;
+      --g-text-main: #ffffff;
+      --g-text-sub: #f3e8ff;
+      --g-text-muted: #c084fc;
+      --g-accent: #f59e0b;
+      color-scheme: dark;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      overscroll-behavior: none;
+      background-color: var(--g-bg-body);
+      color: var(--g-text-main);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* カスタムスクロールバー */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    html.theme-dark ::-webkit-scrollbar-track, html.theme-pop ::-webkit-scrollbar-track { background: var(--g-bg-body); }
+    html.theme-dark ::-webkit-scrollbar-thumb, html.theme-pop ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    html.theme-light ::-webkit-scrollbar-track { background: #f1f5f9; }
+    html.theme-light ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .gantt-bar {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    .gantt-bar:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+      filter: brightness(1.08);
+      z-index: 25;
+    }
+
+    /* 日曜・祝日網掛けパターン */
+    .holiday-col-dark {
+      background-color: rgba(244, 63, 94, 0.13);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(244, 63, 94, 0.09) 7px, rgba(244, 63, 94, 0.09) 14px);
+    }
+    .holiday-col-light {
+      background-color: rgba(244, 63, 94, 0.07);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(244, 63, 94, 0.05) 7px, rgba(244, 63, 94, 0.05) 14px);
+    }
+    .holiday-col-pop {
+      background-color: rgba(244, 63, 94, 0.18);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(244, 63, 94, 0.12) 7px, rgba(244, 63, 94, 0.12) 14px);
+    }
+
+    /* 土曜日網掛けパターン */
+    .saturday-col-dark {
+      background-color: rgba(56, 189, 248, 0.11);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(56, 189, 248, 0.07) 7px, rgba(56, 189, 248, 0.07) 14px);
+    }
+    .saturday-col-light {
+      background-color: rgba(14, 165, 233, 0.065);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(14, 165, 233, 0.045) 7px, rgba(14, 165, 233, 0.045) 14px);
+    }
+    .saturday-col-pop {
+      background-color: rgba(245, 158, 11, 0.12);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(245, 158, 11, 0.08) 7px, rgba(245, 158, 11, 0.08) 14px);
+    }
+
+    input[type="range"] { accent-color: var(--g-accent); }
+    @media (min-width: 768px) { .hide-scrollbar-y::-webkit-scrollbar { width: 0px; } }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden select-none transition-colors duration-200">
+
+  <!-- ==================== ヘッダー・サマリー・コントロール ==================== -->
+  <header style="background-color: var(--g-bg-header); border-color: var(--g-border);" class="border-b px-4 py-2.5 shadow-sm z-30 flex-shrink-0 transition-colors duration-200">
+    <div class="max-w-full mx-auto flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5">
+      
+      <!-- タイトル＆サマリー指標 -->
+      <div class="flex flex-wrap items-center gap-3.5">
+        <div class="flex items-center gap-2.5">
+          <!-- コックピットに戻るボタン（スマートフォーカス・復帰） -->
+          <button type="button" onclick="returnToCockpit()" class="px-2.5 py-1.5 text-xs font-bold text-sky-700 dark:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-xl transition flex items-center gap-1 shadow-sm cursor-pointer" title="Wish & Action コックピット画面へ戻る">
+            <span>←</span>
+            <span>コックピット</span>
+          </button>
+
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="18" y2="12"></line>
+              <line x1="8" y1="18" x2="15" y2="18"></line>
+              <rect x="3" y="4" width="2" height="4" rx="0.5"></rect>
+              <rect x="3" y="10" width="2" height="4" rx="0.5"></rect>
+              <rect x="3" y="16" width="2" height="4" rx="0.5"></rect>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-sm font-extrabold tracking-tight flex items-center gap-1.5">
+              <span>マイ・ガントチャート</span>
+              <span class="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-2 py-0.2 rounded-full border border-sky-500/20">マスター直結版</span>
+            </h1>
+          </div>
+        </div>
+
+        <!-- 全体工数・進捗サマリーカード -->
+        <div id="summary-stats" style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex flex-wrap items-center gap-2.5 px-3 py-1 rounded-xl border text-xs"></div>
+      </div>
+
+      <!-- 操作ツールバー -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- 🌟 テーマ切替（☀️ ライト / 🌙 ダーク / ⚡ ポップ 3色完全同期） -->
+        <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="inline-flex rounded-xl p-0.5 border" role="group" title="画面テーマ切替">
+          <button type="button" id="btn-theme-dark" onclick="setGanttTheme('dark')" class="px-2 py-0.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="ダーク: 漆黒">
+            <span>🌙</span><span class="hidden sm:inline">ダーク</span>
+          </button>
+          <button type="button" id="btn-theme-light" onclick="setGanttTheme('light')" class="px-2 py-0.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="ライト: 上質白">
+            <span>☀️</span><span class="hidden sm:inline">ライト</span>
+          </button>
+          <button type="button" id="btn-theme-pop" onclick="setGanttTheme('pop')" class="px-2 py-0.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="ポップ: ネオン">
+            <span>⚡</span><span class="hidden sm:inline">ポップ</span>
+          </button>
+        </div>
+
+        <!-- 粒度切替（日単位 / 週単位 / 月単位） -->
+        <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="inline-flex rounded-xl p-0.5 border" role="group">
+          <button type="button" data-scale="day" class="scale-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-sky-600 text-white shadow-sm cursor-pointer">
+            日単位
+          </button>
+          <button type="button" data-scale="week" class="scale-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white cursor-pointer">
+            週単位
+          </button>
+          <button type="button" data-scale="month" class="scale-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white cursor-pointer">
+            月単位
+          </button>
+        </div>
+
+        <!-- 今日へスクロールボタン -->
+        <button type="button" id="btn-scroll-today" style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="px-2.5 py-1 text-xs font-bold border rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+          <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+          今日
+        </button>
+
+        <!-- カレンダー予定(イベント)追加ボタン -->
+        <button type="button" id="btn-add-event" class="px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition flex items-center gap-1 cursor-pointer">
+          <span>📅</span>
+          <span>予定管理</span>
+        </button>
+
+        <!-- カテゴリー管理ボタン -->
+        <button type="button" id="btn-manage-categories" style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="px-2.5 py-1 text-xs font-bold border rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>
+          <span>区分</span>
+        </button>
+
+        <!-- 新規タスク追加ボタン -->
+        <button type="button" id="btn-add-task" class="px-3 py-1 text-xs font-extrabold text-white bg-sky-600 hover:bg-sky-500 active:bg-sky-700 rounded-xl shadow-md shadow-sky-600/20 transition flex items-center gap-1 cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>タスク追加</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- カテゴリーフィルターバー & 凡例 -->
+    <div style="border-color: var(--g-border);" class="mt-2 pt-1.5 border-t flex flex-wrap items-center justify-between gap-2">
+      <div id="category-filters" class="flex flex-wrap items-center gap-1.5"></div>
+
+      <div class="hidden lg:flex items-center gap-3 text-[11px] opacity-80">
+        <span class="flex items-center gap-1.5">
+          <span class="inline-block w-3 h-3 rounded border border-sky-400/60 saturday-col-dark"></span>
+          <span>土曜</span>
+          <span class="inline-block w-3 h-3 rounded border border-rose-400/60 holiday-col-dark ml-1"></span>
+          <span>日曜・祝日</span>
+        </span>
+        <span class="opacity-40">|</span>
+        <span class="font-semibold">工数太さ:</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3.5 h-1.5 rounded bg-slate-500"></span>小(~3h)</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3.5 h-2.5 rounded bg-slate-400"></span>中(4~15h)</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3.5 h-4 rounded bg-slate-300"></span>大(16h~)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== メインワイドワークスペース ==================== -->
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+    <!-- 左ペイン：タスク一覧 -->
+    <section id="left-pane-wrapper" style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="w-full md:w-[490px] lg:w-[540px] xl:w-[590px] flex-shrink-0 border-b md:border-b-0 md:border-r flex flex-col h-[46%] md:h-full z-20 shadow-lg transition-colors duration-200">
+      <!-- テーブルヘッダー -->
+      <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="h-[56px] border-b px-4 flex items-center text-[11px] font-extrabold opacity-70 uppercase tracking-wider flex-shrink-0">
+        <div class="w-7 text-center flex-shrink-0">完了</div>
+        <div class="flex-1 min-w-0 pr-2">タスク名 / 開始〜期限</div>
+        <div class="w-20 text-center flex-shrink-0">想定工数</div>
+        <div class="w-28 text-center flex-shrink-0">進捗率</div>
+        <div class="w-12 text-right flex-shrink-0">編集</div>
+      </div>
+
+      <!-- 最上部固定レーン見出し：カレンダー予定（イベント） -->
+      <div id="left-event-lane-header" class="h-[46px] bg-amber-500/10 border-b border-amber-500/30 px-4 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-sm">📅</span>
+          <span class="text-xs font-extrabold text-amber-600 dark:text-amber-300 truncate">カレンダー予定・拘束イベント</span>
+          <span id="event-count-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300">0件</span>
+        </div>
+        <button type="button" id="btn-inline-add-event" class="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 flex-shrink-0 cursor-pointer">
+          <span>＋予定追加</span>
+        </button>
+      </div>
+
+      <!-- 左タスク一覧スクロールコンテナ -->
+      <div id="left-scroll-container" class="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar-y divide-y divide-slate-500/20"></div>
+    </section>
+
+    <!-- 右ペイン：ガントチャートタイムライン -->
+    <section id="right-pane-wrapper" style="background-color: var(--g-bg-body);" class="flex-1 flex flex-col h-[54%] md:h-full overflow-hidden relative transition-colors duration-200">
+      <div id="right-scroll-container" class="flex-1 overflow-auto relative">
+        <div id="gantt-canvas" class="relative min-h-full">
+          <!-- 2階層日付・期間ヘッダー (h-[56px]) -->
+          <div id="timeline-header" style="background-color: var(--g-bg-header); border-color: var(--g-border);" class="sticky top-0 z-20 h-[56px] border-b flex flex-col"></div>
+
+          <!-- 最上部固定レーン：カレンダー予定イベントバー描画帯 (h-[46px]) -->
+          <div id="timeline-event-lane" class="sticky top-[56px] z-20 h-[46px] bg-amber-500/10 backdrop-blur-sm border-b border-amber-500/30 relative flex items-center"></div>
+
+          <!-- 背景グリッド（土日祝の網掛け含む） -->
+          <div id="timeline-grid-bg" class="absolute top-[102px] left-0 bottom-0 pointer-events-none flex"></div>
+
+          <!-- 「今日」の縦ライン -->
+          <div id="today-line" class="hidden absolute top-[56px] bottom-0 w-0.5 bg-rose-500 z-10 pointer-events-none shadow-[0_0_8px_rgba(244,63,94,0.85)]">
+            <div class="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-b shadow -translate-x-1/2 whitespace-nowrap">
+              今日
+            </div>
+          </div>
+
+          <!-- ガントバー描画レイヤー -->
+          <div id="timeline-rows" class="relative z-10 divide-y divide-slate-500/20"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== モーダル：タスク追加・編集 ==================== -->
+  <div id="task-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
+        <h2 id="modal-title" class="text-base font-extrabold">タスク編集</h2>
+        <button type="button" id="btn-close-task-modal" class="opacity-60 hover:opacity-100 p-1 rounded-lg cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <form id="task-form" class="p-6 space-y-4 text-sm overflow-y-auto flex-1">
+        <input type="hidden" id="task-id">
+
+        <div>
+          <label for="task-title" class="block text-xs font-extrabold mb-1">タスク名 <span class="text-rose-500">*</span></label>
+          <input type="text" id="task-title" required maxlength="50" placeholder="やりたいこと名称" style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-bold">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="task-category" class="block text-xs font-extrabold mb-1">カテゴリー（区分）</label>
+            <select id="task-category" style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"></select>
+          </div>
+
+          <div>
+            <label for="task-hours" class="block text-xs font-extrabold mb-1">想定工数 / 重み（時間） <span class="text-rose-500">*</span></label>
+            <div class="relative flex items-center">
+              <input type="number" id="task-hours" required min="0.5" max="1000" step="0.5" value="4" style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-3.5 py-2.5 pr-12 border rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <span class="absolute right-3.5 text-xs font-bold opacity-60">時間</span>
+            </div>
+            <div class="flex gap-1.5 mt-1.5">
+              <button type="button" class="preset-hour px-2 py-0.5 text-[11px] bg-slate-500/20 hover:bg-slate-500/30 rounded font-bold cursor-pointer" data-hours="1">1h</button>
+              <button type="button" class="preset-hour px-2 py-0.5 text-[11px] bg-slate-500/20 hover:bg-slate-500/30 rounded font-bold cursor-pointer" data-hours="4">4h</button>
+              <button type="button" class="preset-hour px-2 py-0.5 text-[11px] bg-slate-500/20 hover:bg-slate-500/30 rounded font-bold cursor-pointer" data-hours="8">8h</button>
+              <button type="button" class="preset-hour px-2 py-0.5 text-[11px] bg-slate-500/20 hover:bg-slate-500/30 rounded font-bold cursor-pointer" data-hours="16">16h</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="task-start" class="block text-xs font-extrabold mb-1">開始日 <span class="text-rose-500">*</span></label>
+            <input type="date" id="task-start" required style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+          </div>
+          <div>
+            <label for="task-end" class="block text-xs font-extrabold mb-1">目標日（終了日）</label>
+            <input type="date" id="task-end" style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+            <span class="text-[10px] opacity-60 mt-0.5 block">※未定の場合は空のままでOK（仕込み中維持）</span>
+          </div>
+        </div>
+
+        <!-- ロジカル進捗率管理セクション -->
+        <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="p-4 rounded-xl border space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-extrabold">進捗率の算出方法</span>
+            <div class="inline-flex rounded-lg bg-black/20 p-0.5 text-[11px] font-bold">
+              <button type="button" data-prog-mode="subtasks" class="prog-mode-btn px-2.5 py-1 rounded-md transition bg-sky-600 text-white cursor-pointer">チェックリスト連動</button>
+              <button type="button" data-prog-mode="hours" class="prog-mode-btn px-2.5 py-1 rounded-md transition opacity-60 cursor-pointer">実績工数連動</button>
+              <button type="button" data-prog-mode="manual" class="prog-mode-btn px-2.5 py-1 rounded-md transition opacity-60 cursor-pointer">手動スライダー</button>
+            </div>
+          </div>
+
+          <div id="prog-panel-subtasks" class="space-y-2">
+            <p class="text-[11px] opacity-70">進捗メモ内の手順チェックリストと相互連動して進捗率を自動算出します。</p>
+            <div id="subtask-list-editor" class="space-y-1.5 max-h-36 overflow-y-auto"></div>
+            <div class="flex items-center gap-1.5 pt-1">
+              <input type="text" id="new-subtask-title" placeholder="例：第1手：下準備と確認" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-2.5 py-1.5 text-xs border rounded-lg">
+              <input type="number" id="new-subtask-weight" value="1" min="1" max="10" title="重み(1〜10)" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-14 px-2 py-1.5 text-xs border rounded-lg text-center font-bold">
+              <button type="button" id="btn-add-subtask" class="px-3 py-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white rounded-lg cursor-pointer">追加</button>
+            </div>
+          </div>
+
+          <div id="prog-panel-hours" class="hidden space-y-2">
+            <p class="text-[11px] opacity-70">「消化済みの実績時間 ÷ 想定工数」で進捗率を算出します。</p>
+            <div class="flex items-center gap-3">
+              <label class="text-xs font-bold">実績消化時間:</label>
+              <input type="number" id="task-actual-hours" min="0" max="1000" step="0.5" value="0" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-28 px-3 py-1.5 border rounded-lg text-sm font-bold">
+              <span class="text-xs opacity-60">時間</span>
+            </div>
+          </div>
+
+          <div id="prog-panel-manual" class="hidden space-y-1">
+            <input type="range" id="task-progress" min="0" max="100" step="1" value="0" class="w-full cursor-pointer">
+          </div>
+
+          <div style="border-color: var(--g-border);" class="pt-2 border-t flex items-center justify-between">
+            <span class="text-xs font-bold opacity-75">算出された進捗率:</span>
+            <span id="task-progress-label" class="text-base font-extrabold text-sky-500">0%</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="task-notes" class="block text-xs font-extrabold mb-1">内容・メモ・進捗テキスト</label>
+          <textarea id="task-notes" rows="3" placeholder="思考背景やメモ書き..." style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono text-xs"></textarea>
+        </div>
+
+        <div style="border-color: var(--g-border);" class="pt-3 flex items-center justify-between gap-2 border-t">
+          <div id="modal-delete-wrapper">
+            <button type="button" id="btn-modal-delete-task" class="hidden px-3 py-2 text-xs font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition flex items-center gap-1 cursor-pointer">
+              <span>🗑️</span><span>この案件を削除する</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" id="btn-cancel-task" class="px-4 py-2 text-xs font-bold opacity-70 hover:opacity-100 rounded-xl transition cursor-pointer">
+              キャンセル
+            </button>
+            <button type="submit" class="px-5 py-2 text-xs font-extrabold text-white bg-sky-600 hover:bg-sky-500 rounded-xl shadow-md transition cursor-pointer">
+              保存する
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル：カレンダー予定管理 ==================== -->
+  <div id="event-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-md overflow-hidden">
+      <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between">
+        <h2 class="text-base font-extrabold text-amber-500 flex items-center gap-2">
+          <span>📅</span><span>カレンダー予定・拘束イベント管理</span>
+        </h2>
+        <button type="button" id="btn-close-event-modal" class="opacity-60 hover:opacity-100 p-1 rounded-lg cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs">
+        <p class="opacity-70 leading-relaxed">
+          旅行や出張、終日会議などの拘束予定を登録します。ガント最上部の「予定レーン」に表示され、タスク調整の目安になります。
+        </p>
+
+        <form id="event-form" style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="space-y-3 p-3.5 rounded-xl border">
+          <div class="flex gap-2">
+            <select id="event-icon" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="px-2 py-2 border rounded-lg text-sm">
+              <option value="🚗">🚗 旅行</option>
+              <option value="💼">💼 仕事・出張</option>
+              <option value="🍻">🍻 友人・遊び</option>
+              <option value="🏥">🏥 用事・通院</option>
+              <option value="📌">📌 重要予定</option>
+            </select>
+            <input type="text" id="event-title" required placeholder="例：温泉旅行 / 終日定例会議" style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-3 py-2 border rounded-lg font-bold">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold opacity-60 mb-0.5">開始日</label>
+              <input type="date" id="event-start" required style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-2.5 py-1.5 border rounded-lg">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold opacity-60 mb-0.5">終了日</label>
+              <input type="date" id="event-end" required style="background-color: var(--g-bg-pane); border-color: var(--g-border); color: var(--g-text-main);" class="w-full px-2.5 py-1.5 border rounded-lg">
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2 font-extrabold text-white bg-amber-600 hover:bg-amber-500 rounded-lg shadow-sm transition cursor-pointer">
+            ＋ 予定レーンに追加する
+          </button>
+        </form>
+
+        <div class="space-y-1.5 max-h-48 overflow-y-auto" id="event-list-editor"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル：カテゴリー管理 ==================== -->
+  <div id="category-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-md overflow-hidden">
+      <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between">
+        <h2 class="text-base font-extrabold">区分（カテゴリー）管理</h2>
+        <button type="button" id="btn-close-cat-modal" class="opacity-60 hover:opacity-100 p-1 rounded-lg cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <form id="category-form" class="flex items-center gap-2">
+          <input type="color" id="new-cat-color" value="#0284c7" class="w-10 h-10 p-1 rounded-xl border border-inherit cursor-pointer bg-transparent">
+          <input type="text" id="new-cat-name" required placeholder="新しい区分名..." style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-3.5 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <button type="submit" class="px-4 py-2.5 text-xs font-extrabold text-white bg-sky-600 hover:bg-sky-500 rounded-xl transition cursor-pointer">
+            追加
+          </button>
+        </form>
+
+        <div class="space-y-2 max-h-60 overflow-y-auto" id="category-list-editor"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通知トースト -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ==================== JavaScript ロジック ==================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // 🌟 コックピット単一マスター直結キー
+      const STORAGE_KEY_COCKPIT_TASKS = 'wish_action_tasks_v2';
+      const STORAGE_KEY_CATS          = 'wish_action_gantt_categories_v1';
+      const STORAGE_KEY_EVENTS        = 'wish_action_gantt_events_v1';
+      const STORAGE_KEY_THEME         = 'wish_action_theme';
+
+      // ウィンドウ識別名固定
+      window.name = 'wish_action_gantt_window';
+
+      const SCALE_CONFIG = {
+        day:   { dayWidth: 46, label: '日単位' },
+        week:  { dayWidth: 20, label: '週単位' },
+        month: { dayWidth: 8,  label: '月単位' }
+      };
+
+      const CATEGORY_ROW_HEIGHT = 40;
+      const TASK_ROW_HEIGHT     = 62;
+
+      const COLOR_PALETTE = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#e11d48', '#0891b2', '#4f46e5', '#ca8a04'];
+
+      const JP_HOLIDAYS = new Set([
+        '2026-01-01', '2026-01-12', '2026-02-11', '2026-02-23', '2026-03-20',
+        '2026-04-29', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06',
+        '2026-07-20', '2026-08-11', '2026-09-21', '2026-09-22', '2026-09-23',
+        '2026-10-12', '2026-11-03', '2026-11-23',
+        '2027-01-01', '2027-01-11', '2027-02-11', '2027-02-23', '2027-03-21'
+      ]);
+
+      function getTodayStr() { return formatDateStr(new Date()); }
+
+      function formatDateStr(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function parseDate(str) {
+        if (!str || typeof str !== 'string' || !str.includes('-')) return new Date();
+        const [y, m, d] = str.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      }
+
+      function addDays(date, days) {
+        const result = new Date(date);
+        result.setDate(result.getDate() + days);
+        return result;
+      }
+
+      function diffDays(startStr, endStr) {
+        const s = parseDate(startStr);
+        const e = parseDate(endStr);
+        return Math.round((e - s) / (1000 * 60 * 60 * 24));
+      }
+
+      function formatShortDate(str) {
+        if (!str) return '未定';
+        const d = parseDate(str);
+        return `${d.getMonth() + 1}/${d.getDate()}`;
+      }
+
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const bgClass = type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-slate-800';
+        toast.className = `${bgClass} text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-white/10 transition-all duration-300 transform translate-y-2 opacity-0`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 300);
+        }, 2800);
+      }
+
+      /**
+       * 🌟 コックピット画面へ戻るスマート移動（フォーカス ➔ タブクローズ ➔ フォールバック遷移）
+       */
+      window.returnToCockpit = function () {
+        if (window.opener && !window.opener.closed) {
+          window.opener.focus();
+          try {
+            window.close();
+          } catch (e) {
+            window.location.href = 'index.html';
+          }
+        } else {
+          window.location.href = 'index.html';
+        }
+      };
+
+      let state = {
+        theme: 'dark',
+        categories: [],
+        tasks: [],
+        events: [],
+        scale: 'day',
+        selectedCategoryFilter: 'ALL',
+        collapsedCategories: new Set(),
+        archiveCollapsed: false,
+        timelineStartStr: '',
+        timelineEndStr: '',
+        editingSubtasks: [],
+        editingProgMode: 'subtasks',
+        deleteConfirmArmed: false
+      };
+
+      /**
+       * 🌟 3大テーマ切り替え（ライト / ダーク / ポップ）
+       */
+      window.setGanttTheme = function(themeName) {
+        state.theme = themeName;
+        localStorage.setItem(STORAGE_KEY_THEME, themeName);
+        applyThemeUI(themeName);
+        renderGanttWorkspace();
+      };
+
+      function applyThemeUI(themeName) {
+        const htmlEl = document.documentElement;
+        htmlEl.className = `theme-${themeName} ${themeName === 'light' ? '' : 'dark'}`;
+
+        const btnDark  = document.getElementById('btn-theme-dark');
+        const btnLight = document.getElementById('btn-theme-light');
+        const btnPop   = document.getElementById('btn-theme-pop');
+
+        const baseClass = 'px-2 py-0.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer opacity-70 hover:opacity-100';
+        const activeClass = 'px-2 py-0.5 text-xs font-black rounded-lg transition-all flex items-center gap-1 bg-sky-600 text-white shadow-sm cursor-pointer opacity-100';
+
+        if (btnDark) btnDark.className = (themeName === 'dark') ? activeClass : baseClass;
+        if (btnLight) btnLight.className = (themeName === 'light') ? activeClass : baseClass;
+        if (btnPop) btnPop.className = (themeName === 'pop') ? activeClass : baseClass;
+      }
+
+      function parseSubtasksFromProgressNote(note) {
+        if (!note) return [];
+        const lines = note.split('\n');
+        const list = [];
+        let count = 1;
+        lines.forEach(line => {
+          const match = line.match(/^\[([ xX])\]\s*(.*)$/);
+          if (match) {
+            list.push({
+              id: 'st-' + count++,
+              title: match[2].trim(),
+              weight: 1,
+              done: match[1].toLowerCase() === 'x'
+            });
+          }
+        });
+        return list;
+      }
+
+      function mergeSubtasksIntoProgressNote(oldNote, subtasks) {
+        const lines = (oldNote || '').split('\n');
+        const nonCheckLines = lines.filter(line => !line.match(/^\[([ xX])\]\s*/));
+        const checkLines = subtasks.map(st => `[${st.done ? 'x' : ' '}] ${st.title}`);
+        return [...checkLines, ...nonCheckLines].join('\n').trim();
+      }
+
+      /**
+       * 🌟 純粋読み込み隔離（無限ループ防止：読み込み時にsetItemを絶対に呼ばない）
+       */
+      function loadMasterState() {
+        try {
+          const savedTheme  = localStorage.getItem(STORAGE_KEY_THEME) || 'dark';
+          const savedEvents = localStorage.getItem(STORAGE_KEY_EVENTS);
+          const rawCockpit  = localStorage.getItem(STORAGE_KEY_COCKPIT_TASKS);
+          const savedCats   = localStorage.getItem(STORAGE_KEY_CATS);
+
+          state.categories = savedCats ? JSON.parse(savedCats) : [];
+          state.events     = savedEvents ? JSON.parse(savedEvents) : [];
+
+          const rawTasks = rawCockpit ? JSON.parse(rawCockpit) : [];
+
+          state.tasks = rawTasks.map(t => {
+            const catName = t.category || '一般';
+            let cat = state.categories.find(c => c.name === catName);
+            if (!cat) {
+              const assignedColor = COLOR_PALETTE[state.categories.length % COLOR_PALETTE.length];
+              cat = { id: 'cat_' + Date.now() + Math.random().toString(36).substring(2, 5), name: catName, color: assignedColor };
+              state.categories.push(cat);
+            }
+
+            const todayStr = getTodayStr();
+            const startD = t.startDate || (t.dueDate ? t.dueDate : todayStr);
+            const endD   = t.dueDate || '';
+
+            return {
+              ...t, // 🌟 元のsessionId, themeIdなどを100%温存
+              title: t.title || '無題のアクション',
+              categoryId: cat.id,
+              startDate: startD,
+              endDate: endD,
+              hours: t.hours !== undefined ? Number(t.hours) : 4,
+              actualHours: t.actualHours !== undefined ? Number(t.actualHours) : 0,
+              progress: Number(t.progressPercent || 0),
+              completed: Boolean(t.completed || t.progressPercent === 100),
+              subtasks: parseSubtasksFromProgressNote(t.progressNote || ''),
+              notes: t.description || ''
+            };
+          });
+
+          applyThemeUI(savedTheme);
+        } catch (e) {
+          console.error('マスター読み込み失敗:', e);
+          state.tasks = [];
+        }
+      }
+
+      function saveMasterState() {
+        try {
+          const payload = state.tasks.map(t => {
+            const cat = state.categories.find(c => c.id === t.categoryId);
+            const catName = cat ? cat.name : (t.category || '一般');
+            const mergedNote = mergeSubtasksIntoProgressNote(t.progressNote, t.subtasks || []);
+
+            return {
+              ...t,
+              category: catName,
+              dueDate: t.endDate || '',
+              startDate: t.startDate || getTodayStr(),
+              hours: Number(t.hours || 4),
+              actualHours: Number(t.actualHours || 0),
+              progressPercent: Number(t.progress || 0),
+              progressNote: mergedNote,
+              completed: Boolean(t.completed || t.progress === 100),
+              needsAttention: !t.endDate || t.priority === '未定'
+            };
+          });
+
+          localStorage.setItem(STORAGE_KEY_COCKPIT_TASKS, JSON.stringify(payload));
+          localStorage.setItem(STORAGE_KEY_CATS, JSON.stringify(state.categories));
+          localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.events));
+        } catch (e) {
+          showToast('データ保存に失敗しました', 'error');
+        }
+      }
+
+      function computeTimelineRange() {
+        const today = parseDate(getTodayStr());
+        const forwardDays = state.scale === 'month' ? 120 : (state.scale === 'week' ? 63 : 32);
+        let minDate = addDays(today, -7);
+        let maxDate = addDays(today, forwardDays);
+
+        state.tasks.forEach(t => {
+          if (t.startDate) {
+            const s = parseDate(t.startDate);
+            if (s < minDate) minDate = addDays(s, -4);
+          }
+          if (t.endDate) {
+            const e = parseDate(t.endDate);
+            if (e > maxDate) maxDate = addDays(e, 14);
+          }
+        });
+
+        state.events.forEach(ev => {
+          const s = parseDate(ev.startDate);
+          const e = parseDate(ev.endDate);
+          if (s < minDate) minDate = addDays(s, -4);
+          if (e > maxDate) maxDate = addDays(e, 14);
+        });
+
+        if (state.scale === 'week') {
+          const dow = minDate.getDay();
+          const diffToMon = dow === 0 ? -6 : 1 - dow;
+          minDate = addDays(minDate, diffToMon);
+        } else if (state.scale === 'month') {
+          minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+        }
+
+        state.timelineStartStr = formatDateStr(minDate);
+        state.timelineEndStr   = formatDateStr(maxDate);
+      }
+
+      function getBarVisualStyle(hours) {
+        if (hours >= 20) return { heightPx: 38, borderClass: 'ring-2 ring-sky-400/30' };
+        if (hours >= 10) return { heightPx: 32, borderClass: 'ring-1 ring-white/15' };
+        if (hours >= 4)  return { heightPx: 26, borderClass: '' };
+        return { heightPx: 20, borderClass: '' };
+      }
+
+      function calculateLogicalProgress(task) {
+        if (task.completed) return 100;
+        if (task.progressMode === 'subtasks' && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
+          const totalW = task.subtasks.reduce((s, st) => s + Number(st.weight || 1), 0);
+          const doneW  = task.subtasks.filter(st => st.done).reduce((s, st) => s + Number(st.weight || 1), 0);
+          return totalW > 0 ? Math.round((doneW / totalW) * 100) : 0;
+        }
+        if (task.progressMode === 'hours') {
+          const est = Number(task.hours || 1);
+          const act = Number(task.actualHours || 0);
+          return Math.min(100, Math.max(0, Math.round((act / est) * 100)));
+        }
+        return Math.min(100, Math.max(0, Number(task.progress || 0)));
+      }
+
+      function renderAll() {
+        computeTimelineRange();
+        renderSummaryStats();
+        renderCategoryFilters();
+        renderGanttWorkspace();
+      }
+
+      function renderSummaryStats() {
+        const container = document.getElementById('summary-stats');
+        if (!container) return;
+        const tasks = state.selectedCategoryFilter === 'ALL' ? state.tasks : state.tasks.filter(t => t.categoryId === state.selectedCategoryFilter);
+        const total = tasks.length;
+        const totalHours = tasks.reduce((s, t) => s + Number(t.hours || 0), 0);
+        const doneHours  = tasks.reduce((s, t) => s + (Number(t.hours || 0) * (Number(t.progress || 0) / 100)), 0);
+        const progress   = totalHours > 0 ? Math.round((doneHours / totalHours) * 100) : 0;
+
+        container.innerHTML = `
+          <div class="flex items-center gap-1"><span class="opacity-70">案件:</span><span class="font-extrabold">${total}件</span></div>
+          <span class="opacity-40">|</span>
+          <div class="flex items-center gap-1"><span class="opacity-70">総工数:</span><span class="font-extrabold">${totalHours.toFixed(1).replace(/\.0$/, '')}h</span></div>
+          <span class="opacity-40">|</span>
+          <div class="flex items-center gap-1"><span class="opacity-70">消化:</span><span class="font-extrabold text-emerald-500">${doneHours.toFixed(1).replace(/\.0$/, '')}h</span></div>
+          <span class="opacity-40">|</span>
+          <div class="flex items-center gap-1.5">
+            <span class="opacity-70">進捗:</span>
+            <div class="w-16 h-1.5 bg-black/20 rounded-full overflow-hidden">
+              <div class="h-full bg-sky-500 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+            </div>
+            <span class="font-extrabold text-sky-500">${progress}%</span>
+          </div>
+        `;
+      }
+
+      function renderCategoryFilters() {
+        const container = document.getElementById('category-filters');
+        if (!container) return;
+        const allActive = state.selectedCategoryFilter === 'ALL';
+
+        let html = `<button type="button" data-cat-filter="ALL" class="cat-filter-btn px-2.5 py-0.5 rounded-full text-xs font-bold transition cursor-pointer ${allActive ? 'bg-sky-600 text-white shadow-sm' : 'border border-inherit opacity-70 hover:opacity-100'}">すべて (${state.tasks.length})</button>`;
+
+        state.categories.forEach(cat => {
+          const count = state.tasks.filter(t => t.categoryId === cat.id).length;
+          const isActive = state.selectedCategoryFilter === cat.id;
+          html += `
+            <button type="button" data-cat-filter="${cat.id}" class="cat-filter-btn px-2.5 py-0.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 border border-inherit cursor-pointer ${isActive ? 'bg-sky-600 text-white shadow-sm opacity-100' : 'opacity-70 hover:opacity-100'}">
+              <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${cat.color}"></span>
+              <span>${escapeHtml(cat.name)}</span>
+              <span class="text-[10px] opacity-70">(${count})</span>
+            </button>
+          `;
+        });
+
+        container.innerHTML = html;
+        container.querySelectorAll('.cat-filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.selectedCategoryFilter = btn.dataset.catFilter;
+            renderAll();
+          });
+        });
+      }
+
+      function buildTimelineHeaderAndGrid(dayWidth, totalDays, startDate, todayStr) {
+        const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+        let topTierHtml    = '';
+        let bottomTierHtml = '';
+        let gridBgHtml     = '';
+
+        const holClass = (state.theme === 'pop') ? 'holiday-col-pop' : (state.theme === 'light' ? 'holiday-col-light' : 'holiday-col-dark');
+        const satClass = (state.theme === 'pop') ? 'saturday-col-pop' : (state.theme === 'light' ? 'saturday-col-light' : 'saturday-col-dark');
+
+        for (let i = 0; i < totalDays; i++) {
+          const curDate   = addDays(startDate, i);
+          const curStr    = formatDateStr(curDate);
+          const dow       = curDate.getDay();
+          const isHoliday = JP_HOLIDAYS.has(curStr);
+          const isToday   = (curStr === todayStr);
+
+          let bgCellClass = 'h-full flex-shrink-0 border-r border-inherit/40 ';
+          if (isToday) {
+            bgCellClass += 'bg-rose-500/15';
+          } else if (isHoliday || dow === 0) {
+            bgCellClass += holClass;
+          } else if (dow === 6) {
+            bgCellClass += satClass;
+          }
+          gridBgHtml += `<div style="width: ${dayWidth}px; border-color: var(--g-border);" class="${bgCellClass}"></div>`;
+        }
+
+        if (state.scale === 'day') {
+          let i = 0;
+          while (i < totalDays) {
+            const d0 = addDays(startDate, i);
+            const curMonth = d0.getMonth();
+            let span = 0;
+            while (i + span < totalDays && addDays(startDate, i + span).getMonth() === curMonth) {
+              span++;
+            }
+            topTierHtml += `
+              <div style="width: ${span * dayWidth}px; border-color: var(--g-border); background-color: var(--g-bg-sub);" class="h-[24px] border-r border-b px-2 flex items-center text-[11px] font-extrabold flex-shrink-0 truncate">
+                ${d0.getFullYear()}年 ${curMonth + 1}月
+              </div>
+            `;
+            i += span;
+          }
+
+          for (let dIdx = 0; dIdx < totalDays; dIdx++) {
+            const curDate   = addDays(startDate, dIdx);
+            const curStr    = formatDateStr(curDate);
+            const dow       = curDate.getDay();
+            const isHoliday = JP_HOLIDAYS.has(curStr);
+            const isToday   = (curStr === todayStr);
+
+            let cellBg = '';
+            let pillClass = 'opacity-80 font-semibold';
+
+            if (isToday) {
+              cellBg = 'bg-rose-500/15';
+              pillClass = 'bg-rose-600 text-white font-extrabold px-1.5 py-0.5 rounded-md shadow-sm';
+            } else if (isHoliday || dow === 0) {
+              cellBg = 'bg-rose-500/10';
+              pillClass = 'bg-rose-500/20 text-rose-500 border border-rose-400/50 font-extrabold px-1 py-0.2 rounded-md';
+            } else if (dow === 6) {
+              cellBg = 'bg-sky-500/10';
+              pillClass = 'bg-sky-500/20 text-sky-500 border border-sky-400/50 font-extrabold px-1 py-0.2 rounded-md';
+            }
+
+            bottomTierHtml += `
+              <div style="width: ${dayWidth}px; border-color: var(--g-border);" class="h-[32px] border-r flex-shrink-0 flex items-center justify-center ${cellBg}">
+                <span class="text-[11px] whitespace-nowrap ${pillClass}">${curDate.getDate()}(${weekdays[dow]})</span>
+              </div>
+            `;
+          }
+        } else if (state.scale === 'week') {
+          let i = 0;
+          while (i < totalDays) {
+            const d0 = addDays(startDate, i);
+            const curMonth = d0.getMonth();
+            let span = 0;
+            while (i + span < totalDays && addDays(startDate, i + span).getMonth() === curMonth) {
+              span++;
+            }
+            topTierHtml += `
+              <div style="width: ${span * dayWidth}px; border-color: var(--g-border); background-color: var(--g-bg-sub);" class="h-[24px] border-r border-b px-2 flex items-center text-[11px] font-extrabold flex-shrink-0 truncate">
+                ${d0.getFullYear()}年 ${curMonth + 1}月
+              </div>
+            `;
+            i += span;
+          }
+
+          let wIdx = 0;
+          let weekNum = 1;
+          while (wIdx < totalDays) {
+            const wStart = addDays(startDate, wIdx);
+            const span   = Math.min(7, totalDays - wIdx);
+            const wEnd   = addDays(wStart, span - 1);
+            const hasToday = (todayStr >= formatDateStr(wStart) && todayStr <= formatDateStr(wEnd));
+
+            bottomTierHtml += `
+              <div style="width: ${span * dayWidth}px; border-color: var(--g-border);" class="h-[32px] border-r flex-shrink-0 flex items-center justify-center px-1 ${hasToday ? 'bg-rose-500/15' : ''}">
+                <span class="text-[11px] font-bold whitespace-nowrap ${hasToday ? 'text-rose-500 font-extrabold' : 'opacity-80'}">
+                  第${weekNum}週 (${wStart.getMonth() + 1}/${wStart.getDate()}〜)
+                </span>
+              </div>
+            `;
+            wIdx += span;
+            weekNum++;
+          }
+        } else {
+          let yIdx = 0;
+          while (yIdx < totalDays) {
+            const d0 = addDays(startDate, yIdx);
+            const curYear = d0.getFullYear();
+            let span = 0;
+            while (yIdx + span < totalDays && addDays(startDate, yIdx + span).getFullYear() === curYear) {
+              span++;
+            }
+            topTierHtml += `
+              <div style="width: ${span * dayWidth}px; border-color: var(--g-border); background-color: var(--g-bg-sub);" class="h-[24px] border-r border-b px-2.5 flex items-center text-[11px] font-extrabold flex-shrink-0">
+                ${curYear}年
+              </div>
+            `;
+            yIdx += span;
+          }
+
+          let mIdx = 0;
+          while (mIdx < totalDays) {
+            const d0 = addDays(startDate, mIdx);
+            const curMonth = d0.getMonth();
+            let span = 0;
+            while (mIdx + span < totalDays && addDays(startDate, mIdx + span).getMonth() === curMonth) {
+              span++;
+            }
+            const isCurrentMonth = (parseDate(todayStr).getFullYear() === d0.getFullYear() && parseDate(todayStr).getMonth() === curMonth);
+
+            bottomTierHtml += `
+              <div style="width: ${span * dayWidth}px; border-color: var(--g-border);" class="h-[32px] border-r flex-shrink-0 flex items-center justify-between px-2 ${isCurrentMonth ? 'bg-sky-500/15' : ''}">
+                <span class="text-xs font-extrabold ${isCurrentMonth ? 'text-sky-500' : 'opacity-80'}">${curMonth + 1}月</span>
+                <span class="text-[10px] opacity-40 hidden sm:inline">上・中・下旬</span>
+              </div>
+            `;
+            mIdx += span;
+          }
+        }
+
+        const headerHtml = `
+          <div class="flex w-full">${topTierHtml}</div>
+          <div class="flex w-full">${bottomTierHtml}</div>
+        `;
+        return { headerHtml, gridBgHtml };
+      }
+
+      function renderGanttWorkspace() {
+        const leftContainer     = document.getElementById('left-scroll-container');
+        const timelineHeader    = document.getElementById('timeline-header');
+        const timelineEventLane = document.getElementById('timeline-event-lane');
+        const timelineGridBg    = document.getElementById('timeline-grid-bg');
+        const timelineRows      = document.getElementById('timeline-rows');
+        const ganttCanvas       = document.getElementById('gantt-canvas');
+        const todayLine         = document.getElementById('today-line');
+        const eventCountBadge   = document.getElementById('event-count-badge');
+
+        const dayWidth  = SCALE_CONFIG[state.scale].dayWidth;
+        const totalDays = diffDays(state.timelineStartStr, state.timelineEndStr) + 1;
+        ganttCanvas.style.width = `${totalDays * dayWidth}px`;
+
+        const startDate = parseDate(state.timelineStartStr);
+        const todayStr  = getTodayStr();
+
+        const { headerHtml, gridBgHtml } = buildTimelineHeaderAndGrid(dayWidth, totalDays, startDate, todayStr);
+        timelineHeader.innerHTML = headerHtml;
+        timelineGridBg.innerHTML = gridBgHtml;
+
+        const todayOffset = diffDays(state.timelineStartStr, todayStr);
+        if (todayOffset >= 0 && todayOffset < totalDays) {
+          todayLine.style.left = `${todayOffset * dayWidth + (dayWidth / 2)}px`;
+          todayLine.classList.remove('hidden');
+        } else {
+          todayLine.classList.add('hidden');
+        }
+
+        if (eventCountBadge) eventCountBadge.textContent = `${state.events.length}件`;
+        let eventLaneHtml = '';
+        state.events.forEach(ev => {
+          const evStartOffset = diffDays(state.timelineStartStr, ev.startDate);
+          const evDuration    = Math.max(1, diffDays(ev.startDate, ev.endDate) + 1);
+          const evLeft        = evStartOffset * dayWidth + 2;
+          const evWidth       = Math.max(dayWidth - 4, evDuration * dayWidth - 4);
+
+          eventLaneHtml += `
+            <div
+              data-open-event-modal="true"
+              style="left: ${evLeft}px; width: ${evWidth}px;"
+              class="gantt-bar absolute h-[30px] rounded-lg bg-amber-500/20 border border-amber-500/70 px-2 flex items-center gap-1 cursor-pointer shadow-sm overflow-hidden"
+              title="${ev.icon} ${escapeHtml(ev.title)} (${ev.startDate} 〜 ${ev.endDate})"
+            >
+              <span class="text-xs flex-shrink-0">${ev.icon}</span>
+              <span class="text-[11px] font-extrabold text-amber-500 truncate">${escapeHtml(ev.title)}</span>
+            </div>
+          `;
+        });
+        timelineEventLane.innerHTML = eventLaneHtml;
+
+        const filteredTasks = state.selectedCategoryFilter === 'ALL'
+          ? state.tasks
+          : state.tasks.filter(t => t.categoryId === state.selectedCategoryFilter);
+
+        const activeTasks    = filteredTasks.filter(t => !t.completed);
+        const completedTasks = filteredTasks.filter(t => t.completed);
+
+        let leftRowsHtml  = '';
+        let rightRowsHtml = '';
+
+        const visibleCategories = state.selectedCategoryFilter === 'ALL'
+          ? state.categories
+          : state.categories.filter(c => c.id === state.selectedCategoryFilter);
+
+        if (filteredTasks.length === 0) {
+          leftRowsHtml = `<div class="p-8 text-center opacity-60 text-xs">コックピットに登録されたアクションがありません。「＋タスク追加」から登録してください。</div>`;
+        }
+
+        visibleCategories.forEach(cat => {
+          const catTasks = activeTasks.filter(t => t.categoryId === cat.id).sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+          if (state.selectedCategoryFilter !== 'ALL' && catTasks.length === 0) return;
+
+          const isCollapsed = state.collapsedCategories.has(cat.id);
+          const totalH = catTasks.reduce((s, t) => s + Number(t.hours || 0), 0);
+          const doneH  = catTasks.reduce((s, t) => s + (Number(t.hours || 0) * (Number(t.progress || 0) / 100)), 0);
+          const prog   = totalH > 0 ? Math.round((doneH / totalH) * 100) : 0;
+
+          leftRowsHtml += `
+            <div style="height: ${CATEGORY_ROW_HEIGHT}px; background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-4 flex items-center justify-between border-b cursor-pointer hover:opacity-90 transition" data-toggle-cat="${cat.id}">
+              <div class="flex items-center gap-2 min-w-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 opacity-60 transition-transform ${isCollapsed ? '-rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <span class="w-3 h-3 rounded-sm flex-shrink-0" style="background-color: ${cat.color}"></span>
+                <span class="text-xs font-extrabold truncate">${escapeHtml(cat.name)}</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.2 border border-inherit rounded opacity-75">${catTasks.length}件</span>
+              </div>
+              <div class="flex items-center gap-2.5 text-[11px] flex-shrink-0">
+                <span class="opacity-70 font-semibold">計 ${totalH}h</span>
+                <span class="font-extrabold text-sky-500">${prog}%</span>
+              </div>
+            </div>
+          `;
+          rightRowsHtml += `<div style="height: ${CATEGORY_ROW_HEIGHT}px; border-color: var(--g-border);" class="bg-black/10 border-b w-full"></div>`;
+
+          if (!isCollapsed) {
+            catTasks.forEach(task => {
+              const rowPair = buildTaskRowHtml(task, cat, dayWidth, false);
+              leftRowsHtml  += rowPair.left;
+              rightRowsHtml += rowPair.right;
+            });
+          }
+        });
+
+        if (completedTasks.length > 0) {
+          leftRowsHtml += `
+            <div style="height: ${CATEGORY_ROW_HEIGHT}px; border-color: var(--g-border);" class="bg-emerald-500/10 px-4 flex items-center justify-between border-t-2 border-b cursor-pointer hover:opacity-90 transition" data-toggle-archive="true">
+              <div class="flex items-center gap-2 min-w-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-emerald-500 transition-transform ${state.archiveCollapsed ? '-rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <span class="text-xs">✅</span>
+                <span class="text-xs font-extrabold text-emerald-500 truncate">達成済みアクション</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 rounded">${completedTasks.length}件</span>
+              </div>
+              <span class="text-[10px] opacity-60">${state.archiveCollapsed ? '開く' : '閉じる'}</span>
+            </div>
+          `;
+          rightRowsHtml += `<div style="height: ${CATEGORY_ROW_HEIGHT}px; border-color: var(--g-border);" class="bg-emerald-500/10 border-t-2 border-b w-full"></div>`;
+
+          if (!state.archiveCollapsed) {
+            completedTasks.forEach(task => {
+              const cat = state.categories.find(c => c.id === task.categoryId) || { color: '#64748b', name: '一般' };
+              const rowPair = buildTaskRowHtml(task, cat, dayWidth, true);
+              leftRowsHtml  += rowPair.left;
+              rightRowsHtml += rowPair.right;
+            });
+          }
+        }
+
+        leftContainer.innerHTML = leftRowsHtml;
+        timelineRows.innerHTML  = rightRowsHtml;
+        bindRowEvents();
+      }
+
+      function buildTaskRowHtml(task, cat, dayWidth, isArchived) {
+        const hours    = Number(task.hours !== undefined ? task.hours : 4);
+        const progress = calculateLogicalProgress(task);
+        task.progress  = progress;
+        const isDone   = Boolean(task.completed || progress === 100);
+        const visual   = getBarVisualStyle(hours);
+
+        const hasDueDate = Boolean(task.endDate && task.endDate.trim() !== '');
+
+        let modeTag = '';
+        if (task.subtasks?.length > 0) {
+          const doneCnt = task.subtasks.filter(s => s.done).length;
+          modeTag = `<span class="text-[9px] px-1.5 py-0.2 rounded bg-sky-500/15 text-sky-400 font-bold">✓ ${doneCnt}/${task.subtasks.length}</span>`;
+        } else if (task.actualHours > 0) {
+          modeTag = `<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-bold">⏱ ${task.actualHours}/${hours}h</span>`;
+        }
+
+        const dateRangeLabel = hasDueDate
+          ? `${formatShortDate(task.startDate)} 〜 ${formatShortDate(task.endDate)}`
+          : `<span class="text-amber-500 font-black">📅 目標日未設定 (仕込み中)</span>`;
+
+        const rowOpacityClass = isDone ? 'opacity-60 bg-black/15' : 'hover:bg-sky-500/5';
+
+        const left = `
+          <div style="height: ${TASK_ROW_HEIGHT}px; border-color: var(--g-border);" class="px-4 flex items-center transition group border-b ${rowOpacityClass}">
+            <div class="w-7 flex items-center justify-start flex-shrink-0">
+              <button type="button" data-toggle-done="${task.id}" class="w-5 h-5 rounded-md border flex items-center justify-center transition cursor-pointer ${isDone ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' : 'border-slate-500/50 hover:border-sky-500 text-transparent'}" title="${isDone ? '未完了に戻す' : '完了にする'}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+            </div>
+
+            <div class="flex-1 min-w-0 pr-2 cursor-pointer" data-edit-task="${task.id}">
+              <div class="text-xs font-bold truncate flex items-center gap-1.5 ${isDone ? 'line-through opacity-60' : 'group-hover:text-sky-500'}" title="${escapeHtml(task.title)}">
+                ${isDone ? '<span class="text-emerald-500 no-underline text-[11px]">✅</span>' : ''}
+                <span class="truncate">${escapeHtml(task.title)}</span>
+              </div>
+              <div class="text-[10px] opacity-70 flex items-center gap-2 mt-0.5">
+                <span>${dateRangeLabel}</span>
+                ${modeTag}
+              </div>
+            </div>
+
+            <div class="w-20 flex justify-center flex-shrink-0">
+              <span style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-2 py-0.5 text-[11px] rounded-md border font-extrabold">
+                ${hours}h
+              </span>
+            </div>
+
+            <div class="w-28 px-1.5 flex flex-col items-center justify-center flex-shrink-0">
+              <div class="flex items-center justify-between w-full text-[10px] font-extrabold mb-1">
+                <span class="${isDone ? 'text-emerald-500' : 'text-sky-500'}">${progress}%</span>
+                ${isDone ? '<span class="text-emerald-500">達成</span>' : ''}
+              </div>
+              <div class="w-full h-2 bg-black/20 rounded-full overflow-hidden cursor-pointer" data-edit-task="${task.id}" title="クリックして進捗・サブタスクを更新">
+                <div class="h-full rounded-full transition-all duration-300 ${isDone ? 'bg-emerald-500' : 'bg-sky-500'}" style="width: ${progress}%"></div>
+              </div>
+            </div>
+
+            <div class="w-12 flex items-center justify-end flex-shrink-0">
+              <button type="button" data-edit-task="${task.id}" class="p-1.5 opacity-60 hover:opacity-100 hover:text-sky-500 rounded-lg transition cursor-pointer" title="詳細編集・スケジュール調整">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+
+        let barHtml = '';
+        if (hasDueDate) {
+          const startOffset  = diffDays(state.timelineStartStr, task.startDate || task.endDate);
+          const durationDays = Math.max(1, diffDays(task.startDate || task.endDate, task.endDate) + 1);
+          const barLeft      = startOffset * dayWidth + 2;
+          const barWidth     = Math.max(dayWidth - 4, durationDays * dayWidth - 4);
+          const barColor     = isDone ? '#64748b' : (cat ? cat.color : '#0284c7');
+          const barLabel     = `${isDone ? '✅ ' : ''}${escapeHtml(task.title)} 【${hours}h / ${progress}%】`;
+
+          barHtml = `
+            <div
+              data-edit-task="${task.id}"
+              style="left: ${barLeft}px; width: ${barWidth}px; height: ${visual.heightPx}px; background-color: ${barColor}28; border-color: ${barColor};"
+              class="gantt-bar absolute rounded-lg border cursor-pointer overflow-hidden flex items-center shadow-sm ${visual.borderClass}"
+              title="${escapeHtml(task.title)}&#10;期間: ${task.startDate} 〜 ${task.endDate}&#10;工数: ${hours}h&#10;進捗: ${progress}%"
+            >
+              <div style="width: ${progress}%; background-color: ${barColor};" class="h-full transition-all duration-300 opacity-90"></div>
+              <div class="absolute inset-0 px-2.5 flex items-center pointer-events-none">
+                <span class="text-[11px] font-extrabold truncate text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                  ${barLabel}
+                </span>
+              </div>
+            </div>
+          `;
+        } else {
+          barHtml = `
+            <div class="px-4 text-[11px] text-amber-500 font-mono font-bold italic opacity-75">
+              ※目標日未設定（左の鉛筆から目標日を決めるとバーが生成されます）
+            </div>
+          `;
+        }
+
+        const right = `
+          <div style="height: ${TASK_ROW_HEIGHT}px; border-color: var(--g-border);" class="relative w-full flex items-center hover:bg-sky-500/5 transition border-b ${isDone ? 'opacity-65' : ''}">
+            ${barHtml}
+          </div>
+        `;
+
+        return { left, right };
+      }
+
+      function bindRowEvents() {
+        document.querySelectorAll('[data-toggle-cat]').forEach(el => {
+          el.addEventListener('click', () => {
+            const catId = el.dataset.toggleCat;
+            if (state.collapsedCategories.has(catId)) state.collapsedCategories.delete(catId);
+            else state.collapsedCategories.add(catId);
+            renderGanttWorkspace();
+          });
+        });
+
+        document.querySelectorAll('[data-toggle-archive]').forEach(el => {
+          el.addEventListener('click', () => {
+            state.archiveCollapsed = !state.archiveCollapsed;
+            renderGanttWorkspace();
+          });
+        });
+
+        document.querySelectorAll('[data-toggle-done]').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const taskId = el.dataset.toggleDone;
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+            task.completed = !task.completed;
+            if (task.completed) {
+              task.progress = 100;
+              showToast(`🎉 「${task.title}」を達成済みにしました！`, 'success');
+            } else {
+              task.progress = calculateLogicalProgress({ ...task, completed: false });
+              showToast(`「${task.title}」を進行中に戻しました`);
+            }
+            saveMasterState();
+            renderAll();
+          });
+        });
+
+        document.querySelectorAll('[data-edit-task]').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openTaskModal(el.dataset.editTask);
+          });
+        });
+
+        document.querySelectorAll('[data-open-event-modal]').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openEventModal();
+          });
+        });
+      }
+
+      function setupScrollSync() {
+        const leftScroll  = document.getElementById('left-scroll-container');
+        const rightScroll = document.getElementById('right-scroll-container');
+        let syncLeft = false, syncRight = false;
+
+        leftScroll.addEventListener('scroll', () => {
+          if (syncLeft) { syncLeft = false; return; }
+          syncRight = true; rightScroll.scrollTop = leftScroll.scrollTop;
+        });
+        rightScroll.addEventListener('scroll', () => {
+          if (syncRight) { syncRight = false; return; }
+          syncLeft = true; leftScroll.scrollTop = rightScroll.scrollTop;
+        });
+      }
+
+      function scrollToToday(smooth = true) {
+        const rightScroll = document.getElementById('right-scroll-container');
+        const dayWidth    = SCALE_CONFIG[state.scale].dayWidth;
+        const todayOffset = diffDays(state.timelineStartStr, getTodayStr());
+        rightScroll.scrollTo({ left: Math.max(0, (todayOffset - 4) * dayWidth), behavior: smooth ? 'smooth' : 'auto' });
+      }
+
+      function switchProgressModeUI(mode) {
+        state.editingProgMode = mode;
+        document.querySelectorAll('.prog-mode-btn').forEach(btn => {
+          const active = btn.dataset.progMode === mode;
+          btn.className = active
+            ? 'prog-mode-btn px-2.5 py-1 rounded-md transition bg-sky-600 text-white cursor-pointer'
+            : 'prog-mode-btn px-2.5 py-1 rounded-md transition opacity-60 cursor-pointer';
+        });
+
+        document.getElementById('prog-panel-subtasks').classList.toggle('hidden', mode !== 'subtasks');
+        document.getElementById('prog-panel-hours').classList.toggle('hidden', mode !== 'hours');
+        document.getElementById('prog-panel-manual').classList.toggle('hidden', mode !== 'manual');
+        updateModalCalculatedProgress();
+      }
+
+      function renderSubtaskEditorList() {
+        const container = document.getElementById('subtask-list-editor');
+        if (state.editingSubtasks.length === 0) {
+          container.innerHTML = `<div class="text-[11px] opacity-60 py-1">まだ子タスクがありません。下の欄から手順を追加してください。</div>`;
+          return;
+        }
+        container.innerHTML = state.editingSubtasks.map((st, idx) => `
+          <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs">
+            <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+              <input type="checkbox" data-st-check="${idx}" ${st.done ? 'checked' : ''} class="w-4 h-4 rounded text-sky-600 cursor-pointer">
+              <span class="truncate ${st.done ? 'line-through opacity-50' : 'font-medium'}">${escapeHtml(st.title)}</span>
+            </label>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-black/20 opacity-75 font-bold">重み:${st.weight}</span>
+              <button type="button" data-st-del="${idx}" class="text-rose-500 hover:text-rose-400 font-bold px-1 cursor-pointer">✕</button>
+            </div>
+          </div>
+        `).join('');
+
+        container.querySelectorAll('[data-st-check]').forEach(chk => {
+          chk.addEventListener('change', (e) => {
+            const idx = Number(chk.dataset.stCheck);
+            state.editingSubtasks[idx].done = e.target.checked;
+            renderSubtaskEditorList();
+            updateModalCalculatedProgress();
+          });
+        });
+
+        container.querySelectorAll('[data-st-del]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.dataset.stDel);
+            state.editingSubtasks.splice(idx, 1);
+            renderSubtaskEditorList();
+            updateModalCalculatedProgress();
+          });
+        });
+      }
+
+      function updateModalCalculatedProgress() {
+        const tempTask = {
+          hours: parseFloat(document.getElementById('task-hours').value) || 1,
+          actualHours: parseFloat(document.getElementById('task-actual-hours').value) || 0,
+          progressMode: state.editingProgMode,
+          subtasks: state.editingSubtasks,
+          progress: parseInt(document.getElementById('task-progress').value, 10) || 0
+        };
+        const pct = calculateLogicalProgress(tempTask);
+        document.getElementById('task-progress-label').textContent = `${pct}%`;
+        return pct;
+      }
+
+      function openTaskModal(taskId = null) {
+        const modal     = document.getElementById('task-modal');
+        const titleEl   = document.getElementById('modal-title');
+        const catSelect = document.getElementById('task-category');
+        const delBtn    = document.getElementById('btn-modal-delete-task');
+
+        state.deleteConfirmArmed = false;
+        delBtn.innerHTML = `<span>🗑️</span><span>この案件を削除する</span>`;
+        delBtn.className = 'hidden px-3 py-2 text-xs font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition flex items-center gap-1 cursor-pointer';
+
+        catSelect.innerHTML = state.categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+        if (taskId) {
+          const task = state.tasks.find(t => t.id === taskId);
+          if (!task) return;
+          titleEl.textContent = 'タスクを編集・スケジュール調整';
+          delBtn.classList.remove('hidden');
+
+          document.getElementById('task-id').value           = task.id;
+          document.getElementById('task-title').value        = task.title;
+          document.getElementById('task-category').value     = task.categoryId;
+          document.getElementById('task-hours').value        = task.hours !== undefined ? task.hours : 4;
+          document.getElementById('task-actual-hours').value = task.actualHours || 0;
+          document.getElementById('task-start').value        = task.startDate || getTodayStr();
+          document.getElementById('task-end').value          = task.endDate || '';
+          document.getElementById('task-progress').value     = task.progress;
+          document.getElementById('task-notes').value        = task.progressNote || task.notes || '';
+
+          state.editingSubtasks = JSON.parse(JSON.stringify(task.subtasks || []));
+          renderSubtaskEditorList();
+          switchProgressModeUI(task.progressMode || (state.editingSubtasks.length > 0 ? 'subtasks' : 'manual'));
+        } else {
+          titleEl.textContent = '新しいタスクを追加';
+          delBtn.classList.add('hidden');
+          const today = getTodayStr();
+          document.getElementById('task-id').value           = '';
+          document.getElementById('task-title').value        = '';
+          document.getElementById('task-category').value     = state.selectedCategoryFilter !== 'ALL' ? state.selectedCategoryFilter : (state.categories[0]?.id || '');
+          document.getElementById('task-hours').value        = 4;
+          document.getElementById('task-actual-hours').value = 0;
+          document.getElementById('task-start').value        = today;
+          document.getElementById('task-end').value          = formatDateStr(addDays(parseDate(today), 4));
+          document.getElementById('task-progress').value     = 0;
+          document.getElementById('task-notes').value        = '';
+
+          state.editingSubtasks = [];
+          renderSubtaskEditorList();
+          switchProgressModeUI('subtasks');
+        }
+        modal.classList.remove('hidden');
+        document.getElementById('task-title').focus();
+      }
+
+      function closeTaskModal() { document.getElementById('task-modal').classList.add('hidden'); }
+
+      function openEventModal() {
+        const today = getTodayStr();
+        document.getElementById('event-start').value = today;
+        document.getElementById('event-end').value   = today;
+        renderEventEditorList();
+        document.getElementById('event-modal').classList.remove('hidden');
+      }
+      function closeEventModal() { document.getElementById('event-modal').classList.add('hidden'); }
+
+      function renderEventEditorList() {
+        const container = document.getElementById('event-list-editor');
+        if (state.events.length === 0) {
+          container.innerHTML = `<div class="text-center opacity-60 py-3">登録済みの予定イベントはありません</div>`;
+          return;
+        }
+        container.innerHTML = state.events.map(ev => `
+          <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex items-center justify-between p-2.5 rounded-xl border">
+            <div class="min-w-0 pr-2">
+              <div class="font-extrabold truncate">${ev.icon} ${escapeHtml(ev.title)}</div>
+              <div class="text-[10px] opacity-70">${ev.startDate} 〜 ${ev.endDate}</div>
+            </div>
+            <button type="button" data-del-ev="${ev.id}" class="text-xs text-rose-500 hover:text-rose-400 font-bold px-2 py-1 rounded hover:bg-rose-500/10 cursor-pointer">削除</button>
+          </div>
+        `).join('');
+
+        container.querySelectorAll('[data-del-ev]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.events = state.events.filter(e => e.id !== btn.dataset.delEv);
+            saveMasterState();
+            renderEventEditorList();
+            renderAll();
+            showToast('予定イベントを削除しました');
+          });
+        });
+      }
+
+      function openCategoryModal() { renderCategoryEditorList(); document.getElementById('category-modal').classList.remove('hidden'); }
+      function closeCategoryModal() { document.getElementById('category-modal').classList.add('hidden'); }
+
+      function renderCategoryEditorList() {
+        const container = document.getElementById('category-list-editor');
+        container.innerHTML = state.categories.map(cat => {
+          const count = state.tasks.filter(t => t.categoryId === cat.id).length;
+          return `
+            <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex items-center justify-between p-3 rounded-xl border">
+              <div class="flex items-center gap-3">
+                <input type="color" value="${cat.color}" data-cat-color="${cat.id}" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
+                <span class="text-xs font-extrabold">${escapeHtml(cat.name)}</span>
+                <span class="text-[10px] opacity-70">(${count}件)</span>
+              </div>
+              ${state.categories.length > 1 ? `<button type="button" data-del-cat="${cat.id}" class="text-xs text-rose-500 hover:text-rose-400 font-bold px-2.5 py-1 rounded hover:bg-rose-500/10 transition cursor-pointer">削除</button>` : ''}
+            </div>
+          `;
+        }).join('');
+
+        container.querySelectorAll('[data-cat-color]').forEach(input => {
+          input.addEventListener('change', (e) => {
+            const cat = state.categories.find(c => c.id === input.dataset.catColor);
+            if (cat) { cat.color = e.target.value; saveMasterState(); renderAll(); }
+          });
+        });
+
+        container.querySelectorAll('[data-del-cat]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const catId    = btn.dataset.delCat;
+            const fallback = state.categories.find(c => c.id !== catId)?.id;
+            state.tasks.forEach(t => { if (t.categoryId === catId) t.categoryId = fallback; });
+            state.categories = state.categories.filter(c => c.id !== catId);
+            if (state.selectedCategoryFilter === catId) state.selectedCategoryFilter = 'ALL';
+            saveMasterState(); renderCategoryEditorList(); renderAll();
+            showToast('区分を削除しました');
+          });
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      function initEvents() {
+        document.querySelectorAll('.scale-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.scale = btn.dataset.scale;
+            document.querySelectorAll('.scale-btn').forEach(b => {
+              b.className = 'scale-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-all opacity-70 hover:opacity-100 cursor-pointer';
+            });
+            btn.className = 'scale-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-sky-600 text-white shadow-sm cursor-pointer opacity-100';
+            renderAll();
+            scrollToToday(false);
+          });
+        });
+
+        document.getElementById('btn-scroll-today').addEventListener('click', () => scrollToToday(true));
+        document.getElementById('btn-add-task').addEventListener('click', () => openTaskModal(null));
+        document.getElementById('btn-close-task-modal').addEventListener('click', closeTaskModal);
+        document.getElementById('btn-cancel-task').addEventListener('click', closeTaskModal);
+
+        document.getElementById('btn-modal-delete-task').addEventListener('click', () => {
+          const id = document.getElementById('task-id').value;
+          const delBtn = document.getElementById('btn-modal-delete-task');
+          if (!id) return;
+
+          if (!state.deleteConfirmArmed) {
+            state.deleteConfirmArmed = true;
+            delBtn.innerHTML = `<span>⚠️</span><span>本当に削除しますか？（再クリックで確定）</span>`;
+            delBtn.className = 'px-3 py-2 text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition flex items-center gap-1 shadow-sm cursor-pointer';
+            return;
+          }
+
+          const target = state.tasks.find(t => t.id === id);
+          state.tasks = state.tasks.filter(t => t.id !== id);
+          saveMasterState();
+          closeTaskModal();
+          renderAll();
+          showToast(`「${target ? target.title : '案件'}」を削除しました`);
+        });
+
+        document.getElementById('btn-add-event').addEventListener('click', openEventModal);
+        document.getElementById('btn-inline-add-event').addEventListener('click', openEventModal);
+        document.getElementById('btn-close-event-modal').addEventListener('click', closeEventModal);
+
+        document.getElementById('event-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const icon  = document.getElementById('event-icon').value;
+          const title = document.getElementById('event-title').value.trim();
+          const start = document.getElementById('event-start').value;
+          let end     = document.getElementById('event-end').value;
+          if (!title) return;
+          if (end < start) end = start;
+
+          state.events.push({ id: 'ev-' + Date.now(), icon, title, startDate: start, endDate: end });
+          document.getElementById('event-title').value = '';
+          saveMasterState();
+          renderEventEditorList();
+          renderAll();
+          showToast('予定イベントを追加しました', 'success');
+        });
+
+        document.querySelectorAll('.prog-mode-btn').forEach(btn => {
+          btn.addEventListener('click', () => switchProgressModeUI(btn.dataset.progMode));
+        });
+
+        document.getElementById('btn-add-subtask').addEventListener('click', () => {
+          const inp = document.getElementById('new-subtask-title');
+          const wInp = document.getElementById('new-subtask-weight');
+          const title = inp.value.trim();
+          const weight = Math.max(1, parseInt(wInp.value, 10) || 1);
+          if (!title) return;
+          state.editingSubtasks.push({ id: 'st-' + Date.now(), title, weight, done: false });
+          inp.value = '';
+          wInp.value = 1;
+          renderSubtaskEditorList();
+          updateModalCalculatedProgress();
+        });
+
+        document.querySelectorAll('.preset-hour').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.getElementById('task-hours').value = btn.dataset.hours;
+            updateModalCalculatedProgress();
+          });
+        });
+
+        document.getElementById('task-hours').addEventListener('input', updateModalCalculatedProgress);
+        document.getElementById('task-actual-hours').addEventListener('input', updateModalCalculatedProgress);
+        document.getElementById('task-progress').addEventListener('input', updateModalCalculatedProgress);
+
+        document.getElementById('task-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const id          = document.getElementById('task-id').value;
+          const title       = document.getElementById('task-title').value.trim();
+          const categoryId  = document.getElementById('task-category').value;
+          const hours       = parseFloat(document.getElementById('task-hours').value) || 4;
+          const actualHours = parseFloat(document.getElementById('task-actual-hours').value) || 0;
+          let startDate     = document.getElementById('task-start').value || getTodayStr();
+          let endDate       = document.getElementById('task-end').value;
+          const notes       = document.getElementById('task-notes').value.trim();
+          const progress    = updateModalCalculatedProgress();
+
+          if (endDate && endDate < startDate) endDate = startDate;
+
+          if (id) {
+            const idx = state.tasks.findIndex(t => t.id === id);
+            if (idx !== -1) {
+              const existing = state.tasks[idx];
+              state.tasks[idx] = {
+                ...existing, // 🌟 元のsessionId, themeId等を完全保持
+                title,
+                categoryId,
+                hours,
+                actualHours,
+                startDate,
+                endDate,
+                progressMode: state.editingProgMode,
+                subtasks: state.editingSubtasks,
+                progress,
+                completed: progress === 100,
+                progressNote: notes || existing.progressNote
+              };
+              showToast('タスクを更新しました（コックピットと完全同期）', 'success');
+            }
+          } else {
+            const newId = 't_' + Date.now();
+            const cat = state.categories.find(c => c.id === categoryId);
+            state.tasks.unshift({
+              id: newId,
+              title,
+              category: cat ? cat.name : '一般',
+              categoryId,
+              hours,
+              actualHours,
+              startDate,
+              endDate,
+              priority: '中',
+              progressMode: state.editingProgMode,
+              subtasks: state.editingSubtasks,
+              progress,
+              completed: progress === 100,
+              progressNote: notes,
+              createdAt: Date.now(),
+              needsAttention: !endDate
+            });
+            showToast('新しいタスクを追加しました', 'success');
+          }
+
+          saveMasterState();
+          closeTaskModal();
+          renderAll();
+        });
+
+        document.getElementById('btn-manage-categories').addEventListener('click', openCategoryModal);
+        document.getElementById('btn-close-cat-modal').addEventListener('click', closeCategoryModal);
+
+        document.getElementById('category-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const name  = document.getElementById('new-cat-name').value.trim();
+          const color = document.getElementById('new-cat-color').value;
+          if (!name) return;
+          state.categories.push({ id: 'cat_' + Date.now(), name, color });
+          document.getElementById('new-cat-name').value = '';
+          saveMasterState();
+          renderCategoryEditorList();
+          renderAll();
+          showToast(`区分「${name}」を追加しました`, 'success');
+        });
+
+        // 🌟 コックピット側のデータ・テーマ変更をリアルタイム同期
+        window.addEventListener('storage', (event) => {
+          if (event.key === STORAGE_KEY_COCKPIT_TASKS) {
+            loadMasterState();
+            renderAll();
+            showToast('🔄 コックピットの最新データを同期しました', 'info');
+          } else if (event.key === STORAGE_KEY_THEME) {
+            const newTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'dark';
+            state.theme = newTheme;
+            applyThemeUI(newTheme);
+            renderGanttWorkspace();
+          }
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        loadMasterState();
+        initEvents();
+        setupScrollSync();
+        renderAll();
+        setTimeout(() => scrollToToday(false), 50);
+      });
+    })();
+  </script>
+</body>
+</html>
