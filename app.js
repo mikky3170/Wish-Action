@@ -22,6 +22,11 @@
  *       ② 開始日（startDate）と想定工数（hours）を非破壊拡張
  *       ③ 名前付きウィンドウターゲットによる安全なタブ行き来（未起動なら起動、起動済みならリロードなしで前面化）
  *       ④ storageイベントによるリアルタイム双方向同期（削除時クラッシュ防止ガード完備）
+ *   - 🌟【Googleカレンダー抜本的同期エンジン（冪等性・自己修復）】：
+ *       ① 既存の重複予定（多重増殖ゴミ）を自動検出して余分な予定をDELETE削除・1つに集約修復
+ *       ② 半永久タスク識別子 [wish_id: ...] による1対1の厳密バインド（何回同期しても二重化ゼロ）
+ *       ③ Googleカレンダーからの拘束予定フェッチ ＆ 【Wish】タスク逆輸入防止
+ *       ④ Google公式11色カラーマッピングとガント手動予定メモの完全共存
  *   - 🌟【Gemini API 堅牢化エンジン】：
  *       第1優先: gemini-3.5-flash-lite / 第2優先: gemini-flash-lite-latest
  *       段階的タイムアウト（10秒 ➔ 20秒 ➔ 30秒）による自動救済リトライ ＆ 明確なエラー通知
@@ -43,11 +48,27 @@ const STORAGE_KEY_MODEL_DEEP = 'wish_action_model_deep';
 const STORAGE_KEY_CAL_SYNC = 'wish_action_cal_sync_enabled';
 const STORAGE_KEY_GCAL_CLIENT_ID = 'wish_action_gcal_client_id';
 const STORAGE_KEY_THEME = 'wish_action_theme';
+const STORAGE_KEY_EVENTS = 'wish_action_gantt_events_v1';
 const COCKPIT_INBOX_KEY = 'wish_action_studio_inbox_queue';
 
 // 厳格固定モデル定義（第1優先: 3.5-flash-lite ／ 第2優先バックアップ: flash-lite-latest）
 const MODEL_PRIMARY = 'gemini-3.5-flash-lite';
 const MODEL_BACKUP  = 'gemini-flash-lite-latest';
+
+// Google公式カレンダーカラーパレット（1〜11番）
+const GOOGLE_CALENDAR_COLORS = {
+  "1":  "#7986cb", // ラベンダー（薄紫）
+  "2":  "#33b679", // セージ（緑）
+  "3":  "#8e24aa", // グレープ（紫）
+  "4":  "#e67c73", // フラミンゴ（ピンク・赤）
+  "5":  "#f6bf26", // バナナ（黄色）
+  "6":  "#f4511e", // みかん（オレンジ）
+  "7":  "#039be5", // ピーコック（水色）
+  "8":  "#616161", // グラファイト（濃グレー）
+  "9":  "#3f51b5", // ブルーベリー（濃紺）
+  "10": "#0b8043", // バジル（深緑）
+  "11": "#d50000"  // トマト（赤）
+};
 
 // ウィンドウ名（タブ重複防止）
 window.name = 'wish_action_cockpit_window';
@@ -195,7 +216,7 @@ function setupStorageEventListener() {
           renderTasks();
           renderCenterPane();
           updateAllBadgesAndIndicators();
-          updateGuidanceBanner('🔄 ガントチャートと同期', 'ガントチャート側の変更がリアルタイムに反映されました。', false);
+          updateGuidanceBanner('🔄 ガントチャートと同期', 'ガントチャート側の変更（カテゴリー名やタスク内容）がリアルタイムに反映されました。', false);
         }
       } catch (e) {
         console.warn('ストレージ同期エラー:', e);
@@ -2699,7 +2720,7 @@ function updateApiStatusIndicator() {
 }
 
 // ==========================================
-// 14. Googleカレンダー連携
+// 14. Googleカレンダー抜本的同期エンジン（冪等性・自己修復）
 // ==========================================
 
 function handleGoogleAuth() {
@@ -2795,6 +2816,13 @@ function updateCalendarSyncUI() {
   }
 }
 
+/**
+ * 🌟 Googleカレンダーとの抜本的完全同期（冪等性・自己修復）
+ * 1. Googleカレンダーから既存の全【Wish】予定をスキャン
+ * 2. 過去に多重増殖してしまった重複ゴミ予定を自動検知して DELETE 削除・1つに集約
+ * 3. 各タスクを [wish_id: ...] による厳密な1対1で更新 (PATCH) または新規作成 (POST)
+ * 4. Googleカレンダーから現実の拘束予定を安全フェッチしてガントチャートへリアルタイム通知
+ */
 async function syncAllTasksToGoogleCalendar() {
   if (!isCalendarSyncEnabled) {
     alert('カレンダー同期がOFFになっています。左上のカレンダーボタンをONにしてください。');
@@ -2807,57 +2835,283 @@ async function syncAllTasksToGoogleCalendar() {
     return;
   }
 
-  const tasksWithDue = (window.cockpitTasks || []).filter(t => !t.completed && t.dueDate);
-  if (tasksWithDue.length === 0) {
-    alert('同期対象の目標日付きアクションがありません。');
-    return;
-  }
+  updateGuidanceBanner('📅 カレンダー同期中...', `重複を自己修復しながらGoogleカレンダーと完全同期しています...`, true);
 
-  updateGuidanceBanner('📅 カレンダー同期中...', `${tasksWithDue.length}件のアクションをGoogleカレンダーへ登録しています。`, true);
+  try {
+    // ステップ1：Googleカレンダー上の既存【Wish】イベントを全件スキャン
+    const existingWishEvents = await fetchAllWishEventsFromGoogle();
 
-  let successCount = 0;
-  let authExpired = false;
+    // ステップ2：コックピット内の期日ありタスクを準備
+    const tasksWithDue = (window.cockpitTasks || []).filter(t => !t.completed && t.dueDate);
 
-  for (const task of tasksWithDue) {
-    try {
+    let updatedCount = 0;
+    let createdCount = 0;
+    let cleanedDuplicateCount = 0;
+
+    // ステップ3：タスクごとに1対1マッチング ＆ 多重増殖ゴミの自動削除
+    for (const task of tasksWithDue) {
+      const summaryExpected = `【Wish】${task.title}`;
+      const idTag = `[wish_id:${task.id}]`;
+
+      // 該当タスクにマッチするGoogle側イベントを全て探す（IDタグ優先、次いで件名一致）
+      const matchedEvents = existingWishEvents.filter(ev => {
+        const desc = ev.description || '';
+        const summ = ev.summary || '';
+        return desc.includes(idTag) || summ === summaryExpected;
+      });
+
       const eventPayload = {
-        summary: `【Wish】${task.title}`,
-        description: `${task.description || ''}\n\n[進捗メモ]\n${task.progressNote || ''}`,
+        summary: summaryExpected,
+        description: `${task.description || ''}\n\n[進捗メモ]\n${task.progressNote || ''}\n\n${idTag}`,
         start: { date: task.dueDate },
         end: { date: task.dueDate }
       };
 
-      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${gcalAccessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(eventPayload)
-      });
+      if (matchedEvents.length > 0) {
+        // A. 1つ目を「正」として最新情報で上書き更新（PATCH）
+        const primaryEvent = matchedEvents[0];
+        await patchGoogleCalendarEvent(primaryEvent.id, eventPayload);
+        task.gcalEventId = primaryEvent.id;
+        updatedCount++;
 
-      if (res.status === 401) {
-        authExpired = true;
-        break;
+        // B. 🌟 抜本的自己修復：2つ目以降の増殖ゴミ予定をGoogleカレンダーから物理削除（DELETE）！
+        for (let i = 1; i < matchedEvents.length; i++) {
+          const duplicateEv = matchedEvents[i];
+          try {
+            await deleteGoogleCalendarEvent(duplicateEv.id);
+            cleanedDuplicateCount++;
+          } catch (delErr) {
+            console.warn('重複削除スキップ:', duplicateEv.id, delErr);
+          }
+        }
+      } else {
+        // C. Google側に存在しない新規タスクのみ作成（POST）
+        const newEvent = await postGoogleCalendarEvent(eventPayload);
+        if (newEvent && newEvent.id) {
+          task.gcalEventId = newEvent.id;
+          createdCount++;
+        }
       }
+    }
 
-      if (res.ok) successCount++;
-    } catch (e) {
-      console.warn('カレンダー登録スキップ:', task.title, e);
+    // タスク側の gcalEventId 変更を安全保存
+    saveDataToLocalStorage();
+
+    // ステップ4：Googleカレンダーから拘束予定（出社・在宅・通院等）を取得してガントへ同期
+    const fetchedEventCount = await fetchAndSyncGoogleCalendarEvents();
+
+    let cleanMsg = cleanedDuplicateCount > 0 ? `\n🧹 過去に多重増殖していた重複ゴミ予定 ${cleanedDuplicateCount}件 を自動削除・クリーンアップしました。` : '';
+    updateGuidanceBanner('📅 同期完了', `タスク整合(更新:${updatedCount} / 新規:${createdCount}) ＆ Google予定${fetchedEventCount}件をガントへ反映しました。`, false);
+    alert(`🎉 カレンダー完全同期が完了しました！\n\n・タスク更新（上書き）: ${updatedCount}件\n・タスク新規登録: ${createdCount}件\n・Google拘束予定の取込: ${fetchedEventCount}件${cleanMsg}\n\n※何回同期しても二重増殖せず、ガントチャートへ即時反映されます。`);
+
+  } catch (err) {
+    console.error('カレンダー完全同期エラー:', err);
+    if (err.message && err.message.includes('401')) {
+      gcalAccessToken = null;
+      updateGoogleAuthUI();
+      alert('Google認証の有効期限が切れました。設定から「Googleで認証」を押し直してください。');
+      openSettingsModal();
+    } else {
+      alert('カレンダー同期中にエラーが発生しました: ' + err.message);
     }
   }
+}
 
-  if (authExpired) {
-    gcalAccessToken = null;
-    updateGoogleAuthUI();
-    updateGuidanceBanner('⚠️ Google認証切れ', 'Google認証の有効期限（1時間）が切れました。設定から再認証してください。', true);
-    alert('Google認証の有効期限（1時間）が切れました。設定画面から「Googleで認証」を押し直してください。');
-    openSettingsModal();
-    return;
+/**
+ * Googleカレンダーから既存の【Wish】イベントを全件スキャン取得
+ */
+async function fetchAllWishEventsFromGoogle() {
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?q=${encodeURIComponent('【Wish】')}&maxResults=250&singleEvents=true`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${gcalAccessToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('401 Unauthorized');
+    throw new Error(`Google Calendar GETエラー: ${res.status}`);
+  }
+  const data = await res.json();
+  return (data.items || []).filter(ev => ev.status !== 'cancelled');
+}
+
+async function postGoogleCalendarEvent(payload) {
+  const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${gcalAccessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('401 Unauthorized');
+    throw new Error(`Google Calendar POSTエラー: ${res.status}`);
+  }
+  return await res.json();
+}
+
+async function patchGoogleCalendarEvent(eventId, payload) {
+  const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${gcalAccessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('401 Unauthorized');
+    throw new Error(`Google Calendar PATCHエラー: ${res.status}`);
+  }
+  return await res.json();
+}
+
+async function deleteGoogleCalendarEvent(eventId) {
+  const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${gcalAccessToken}`
+    }
+  });
+  if (!res.ok && res.status !== 404 && res.status !== 410) {
+    if (res.status === 401) throw new Error('401 Unauthorized');
+    throw new Error(`Google Calendar DELETEエラー: ${res.status}`);
+  }
+}
+
+/**
+ * 🌟 Googleカレンダーから拘束予定を取得し、手動予定を保護しつつガントへマージ
+ */
+async function fetchAndSyncGoogleCalendarEvents() {
+  if (!gcalAccessToken) return 0;
+
+  // ガントチャートの表示対象期間（今日 -30日 〜 +90日）に絞り込んで軽量フェッチ
+  const now = new Date();
+  const timeMinDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+  const timeMaxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 90);
+
+  const timeMin = timeMinDate.toISOString();
+  const timeMax = timeMaxDate.toISOString();
+
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=250`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${gcalAccessToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      gcalAccessToken = null;
+      updateGoogleAuthUI();
+      throw new Error('401 Unauthorized');
+    }
+    throw new Error(`Google Calendar API GETエラー: ${res.status}`);
   }
 
-  updateGuidanceBanner('📅 同期完了', `${successCount}件のアクションをGoogleカレンダーへ同期しました。`, false);
-  alert(`${successCount}件のアクションをGoogleカレンダーに正常同期しました。`);
+  const data = await res.json();
+  const items = data.items || [];
+
+  // ① 【Wish】タスクは除外し、純粋な拘束予定のみを抽出
+  const pureEvents = items.filter(ev => {
+    const summary = ev.summary || '';
+    return !summary.startsWith('【Wish】') && ev.status !== 'cancelled';
+  });
+
+  // ② 各予定のデータ整形（カラー・アイコン・時間判定）
+  const formattedGoogleEvents = pureEvents.map(ev => {
+    const isAllDay = Boolean(ev.start?.date);
+    let startDate = '';
+    let endDate = '';
+    let startTimeStr = '';
+    let endTimeStr = '';
+
+    if (isAllDay) {
+      startDate = ev.start.date;
+      // Google終日予定の翌日排他終了日を同一日または最終日に安全補正
+      const endD = parseDateStr(ev.end?.date || ev.start.date);
+      endD.setDate(endD.getDate() - 1);
+      const computedEnd = formatDateStr(endD);
+      endDate = (computedEnd >= startDate) ? computedEnd : startDate;
+    } else {
+      const sDateObj = new Date(ev.start?.dateTime || '');
+      const eDateObj = new Date(ev.end?.dateTime || '');
+      startDate = formatDateStr(sDateObj);
+      endDate = formatDateStr(eDateObj);
+      startTimeStr = `${String(sDateObj.getHours()).padStart(2, '0')}:${String(sDateObj.getMinutes()).padStart(2, '0')}`;
+      endTimeStr = `${String(eDateObj.getHours()).padStart(2, '0')}:${String(eDateObj.getMinutes()).padStart(2, '0')}`;
+    }
+
+    const summary = ev.summary || '予定あり';
+    const icon = guessEventIcon(summary);
+    const colorHex = GOOGLE_CALENDAR_COLORS[ev.colorId] || '#0284c7';
+
+    return {
+      id: 'gcal_' + ev.id,
+      googleEventId: ev.id,
+      source: 'google',
+      icon: icon,
+      title: summary,
+      startDate: startDate,
+      endDate: endDate,
+      isAllDay: isAllDay,
+      startTime: startTimeStr,
+      endTime: endTimeStr,
+      timeRangeText: isAllDay ? '終日' : `${startTimeStr} - ${endTimeStr}`,
+      color: colorHex,
+      colorId: ev.colorId || null,
+      htmlLink: ev.htmlLink || 'https://calendar.google.com/',
+      description: ev.description || '',
+      location: ev.location || ''
+    };
+  });
+
+  // ③ 既存のガント予定から手動作成された予定（source !== 'google'）を保護
+  let existingEvents = [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_EVENTS);
+    if (raw) existingEvents = JSON.parse(raw);
+  } catch (e) {
+    existingEvents = [];
+  }
+
+  const manualEvents = existingEvents.filter(e => e.source !== 'google');
+
+  // ④ 手動予定 ＋ Google最新予定 を結合してストレージ保存（最新洗い替え）
+  const mergedEvents = [...manualEvents, ...formattedGoogleEvents];
+  localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(mergedEvents));
+
+  return formattedGoogleEvents.length;
+}
+
+function guessEventIcon(title) {
+  const t = title.toLowerCase();
+  if (t.includes('病院') || t.includes('通院') || t.includes('ドック') || t.includes('歯科') || t.includes('クリニック')) return '🏥';
+  if (t.includes('出社') || t.includes('オフィス') || t.includes('打合せ') || t.includes('mtg') || t.includes('会議') || t.includes('商談')) return '💼';
+  if (t.includes('tw') || t.includes('在宅') || t.includes('テレワーク') || t.includes('リモート')) return '🏠';
+  if (t.includes('旅行') || t.includes('ドライブ') || t.includes('宿泊') || t.includes('温泉')) return '🚗';
+  if (t.includes('飲み') || t.includes('懇親') || t.includes('会食') || t.includes('食事') || t.includes('ランチ') || t.includes('ディナー')) return '🍻';
+  if (t.includes('祝日') || t.includes('感謝の日') || t.includes('の日') || t.includes('休日')) return '🎌';
+  return '📌';
+}
+
+function parseDateStr(str) {
+  if (!str) return new Date();
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 // ==========================================
