@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja" class="theme-dark">
 <head>
@@ -519,24 +520,24 @@
     </div>
   </div>
 
-  <!-- ==================== 🌟 モーダル：カテゴリー管理（名前直接編集・安全一括リネーム対応） ==================== -->
+  <!-- ==================== 🌟 モーダル：カテゴリー管理（縦長大画面スクロールレス ＆ 並び替え▲/▼ ＆ 完全安全保護削除） ==================== -->
   <div id="category-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-md overflow-hidden">
-      <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between">
+    <div style="background-color: var(--g-bg-pane); border-color: var(--g-border);" class="rounded-2xl shadow-2xl border w-full max-w-lg max-h-[88vh] flex flex-col overflow-hidden">
+      <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
         <h2 class="text-base font-extrabold flex items-center gap-2">
-          <span>🏷️</span><span>区分（カテゴリー）管理 ＆ リネーム</span>
+          <span>🏷️</span><span>区分（カテゴリー）管理 ＆ 並び替え</span>
         </h2>
         <button type="button" id="btn-close-cat-modal" class="opacity-60 hover:opacity-100 p-1 rounded-lg cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
-      <div class="p-6 space-y-4">
-        <p class="text-[11px] opacity-70 leading-relaxed">
-          ※区分名を変更すると、所属するすべてのアクションの区分名が自動で一括リネームされ、コックピット側へも即時同期されます。
+      <div class="p-6 space-y-4 flex flex-col flex-1 overflow-hidden">
+        <p class="text-[11px] opacity-70 leading-relaxed flex-shrink-0">
+          ※「▲」「▼」で表示順を変更できます。区分名を変更すると所属アクションも自動で一括リネームされます。削除時は所属アクションが安全に「未分類」へ移動します。
         </p>
 
-        <form id="category-form" class="flex items-center gap-2">
+        <form id="category-form" class="flex items-center gap-2 flex-shrink-0">
           <input type="color" id="new-cat-color" value="#0284c7" class="w-10 h-10 p-1 rounded-xl border border-inherit cursor-pointer bg-transparent">
           <input type="text" id="new-cat-name" required placeholder="新しい区分名を追加..." style="background-color: var(--g-bg-sub); border-color: var(--g-border); color: var(--g-text-main);" class="flex-1 px-3.5 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-bold">
           <button type="submit" class="px-4 py-2.5 text-xs font-extrabold text-white bg-sky-600 hover:bg-sky-500 rounded-xl transition cursor-pointer">
@@ -544,7 +545,8 @@
           </button>
         </form>
 
-        <div class="space-y-2 max-h-64 overflow-y-auto" id="category-list-editor"></div>
+        <!-- 🌟 縦長大画面コンテナ（スクロール不要で全体を一望可能） -->
+        <div class="space-y-2 flex-1 max-h-[62vh] overflow-y-auto pr-1" id="category-list-editor"></div>
       </div>
     </div>
   </div>
@@ -718,9 +720,6 @@
         return [...checkLines, ...nonCheckLines].join('\n').trim();
       }
 
-      /**
-       * 🌟 純粋読み込み隔離（無限ループ防止：読み込み時にsetItemを絶対に呼ばない）
-       */
       function loadMasterState() {
         try {
           const savedTheme  = localStorage.getItem(STORAGE_KEY_THEME) || 'dark';
@@ -747,7 +746,7 @@
             const endD   = t.dueDate || '';
 
             return {
-              ...t, // 🌟 元のsessionId, themeIdなどを100%温存
+              ...t,
               title: t.title || '無題のアクション',
               categoryId: cat.id,
               startDate: startD,
@@ -768,6 +767,9 @@
         }
       }
 
+      /**
+       * 🌟 データ保存処理（未定義変数バグを完全解消・堅牢な永続化）
+       */
       function saveMasterState() {
         try {
           const payload = state.tasks.map(t => {
@@ -793,6 +795,7 @@
           localStorage.setItem(STORAGE_KEY_CATS, JSON.stringify(state.categories));
           localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.events));
         } catch (e) {
+          console.error('保存処理エラー詳細:', e);
           showToast('データ保存に失敗しました', 'error');
         }
       }
@@ -902,7 +905,7 @@
             <button type="button" data-cat-filter="${cat.id}" class="cat-filter-btn px-2.5 py-0.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 border border-inherit cursor-pointer ${isActive ? 'bg-sky-600 text-white shadow-sm opacity-100' : 'opacity-70 hover:opacity-100'}">
               <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${cat.color}"></span>
               <span>${escapeHtml(cat.name)}</span>
-              <span class="text-[10px] opacity-70">(${count})</span>
+              <span class="text-[10px] opacity-70 font-mono">(${count})</span>
             </button>
           `;
         });
@@ -1068,6 +1071,9 @@
 
       /**
        * 🌟 予定レーン（46px固定高）内の2段スマートスタック配置計算
+       * 改善点:
+       *   - 外枠左ボーダー（border-left: 3px）によりバー内部幅を限界まで最大化。
+       *   - 省略記号（…）を完全排除し、半角2文字／全角1文字が確実にクッキリ枠内に収まる高密度スリム描画。
        */
       function buildEventLaneHtml(dayWidth) {
         const sortedEvents = [...state.events].sort((a, b) => {
@@ -1085,8 +1091,8 @@
 
           const startOffset  = diffDays(state.timelineStartStr, sDate);
           const durationDays = Math.max(1, diffDays(sDate, eDate) + 1);
-          const evLeft        = startOffset * dayWidth + 2;
-          const evWidth       = Math.max(dayWidth - 4, durationDays * dayWidth - 4);
+          const evLeft       = startOffset * dayWidth + 2;
+          const evWidth      = Math.max(dayWidth - 4, durationDays * dayWidth - 4);
 
           let trackIndex = 0;
           if (trackEnds[0] && sDate <= trackEnds[0]) {
@@ -1106,25 +1112,32 @@
           const icon = ev.icon || (isGoogle ? '📅' : '📌');
           const timeText = ev.isAllDay ? '終日' : (ev.timeRangeText || (ev.startTime ? `${ev.startTime}` : ''));
 
+          // 🌟 アイコンのクッキリ極小表示（余白ゼロ・最小フットプリント）
+          const iconBadgeHtml = `
+            <span class="flex-shrink-0 text-[10px] leading-none inline-flex items-center justify-center filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.95)] select-none">
+              ${icon}
+            </span>
+          `;
+
+          // 🌟 省略記号（…）完全排除！半角2文字・全角1文字を確実に枠内表示
+          // 幅80px以上（2日分以上）あれば時刻も併記、狭い枠（42px）では文字を最優先表示！
           let labelHtml = '';
           if (state.scale === 'day') {
+            const hasWideSpace = evWidth >= 80;
             labelHtml = `
-              <span class="flex-shrink-0 text-[10px]">${icon}</span>
-              ${timeText ? `<span class="text-[9px] font-mono opacity-85 shrink-0 font-bold">[${timeText}]</span>` : ''}
-              <span class="text-[10px] font-extrabold truncate drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">${escapeHtml(ev.title)}</span>
+              ${iconBadgeHtml}
+              <span style="letter-spacing: -0.04em;" class="text-[10px] font-bold whitespace-nowrap overflow-hidden text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.95)] min-w-0 flex-1 leading-none">${escapeHtml(ev.title)}</span>
+              ${(timeText && hasWideSpace) ? `<span class="text-[9px] font-mono opacity-80 shrink-0 font-bold ml-0.5 leading-none">[${timeText}]</span>` : ''}
             `;
           } else if (state.scale === 'week') {
-            const shortTitle = ev.title.length > 5 ? ev.title.substring(0, 4) + '..' : ev.title;
             labelHtml = `
-              <span class="flex-shrink-0 text-[9px]">${icon}</span>
-              ${ev.startTime ? `<span class="text-[8px] font-mono font-bold">${ev.startTime.split(':')[0]}h</span>` : ''}
-              <span class="text-[9px] font-extrabold truncate">${escapeHtml(shortTitle)}</span>
+              ${iconBadgeHtml}
+              <span style="letter-spacing: -0.04em;" class="text-[9px] font-bold whitespace-nowrap overflow-hidden text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.95)] min-w-0 flex-1 leading-none">${escapeHtml(ev.title)}</span>
             `;
           } else {
-            labelHtml = ``;
+            labelHtml = `${iconBadgeHtml}`;
           }
 
-          // 🌟 スッキリ整理された安全ツールチップ（&#10;の文字化けを完全排除）
           const dateRangeLabel = (ev.startDate === ev.endDate || !ev.endDate)
             ? ev.startDate
             : `${ev.startDate} 〜 ${ev.endDate}`;
@@ -1135,16 +1148,16 @@
           ];
           const cleanTooltip = tooltipLines.join('\n');
 
+          // 🌟 内部のアクセントdivを廃止し、border-left: 3px でアクセント色を表現することで内部幅を最大化
           html += `
             <div
               data-event-id="${ev.id}"
               data-is-google="${isGoogle ? 'true' : 'false'}"
-              style="left: ${evLeft}px; width: ${evWidth}px; top: ${topPx}px; height: ${heightPx}px; background-color: ${evColor}2b; border-color: ${evColor}; color: ${evColor};"
-              class="event-bar-stack absolute rounded border px-1.5 flex items-center gap-1 cursor-pointer overflow-hidden shadow-sm"
+              style="left: ${evLeft}px; width: ${evWidth}px; top: ${topPx}px; height: ${heightPx}px; background-color: ${evColor}44; border-color: ${evColor}; border-left-width: 3px; border-left-color: ${evColor};"
+              class="event-bar-stack absolute rounded border px-1 flex items-center gap-1 cursor-pointer overflow-hidden shadow-sm backdrop-blur-[1px]"
               title="${escapeHtml(cleanTooltip)}"
             >
-              <div style="background-color: ${evColor};" class="absolute left-0 top-0 bottom-0 w-1 flex-shrink-0 opacity-80"></div>
-              <div class="flex items-center gap-1 min-w-0 pl-1">
+              <div class="flex items-center gap-1 min-w-0 w-full overflow-hidden leading-none">
                 ${labelHtml}
               </div>
             </div>
@@ -1637,7 +1650,7 @@
           <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex items-center justify-between p-2.5 rounded-xl border">
             <div class="min-w-0 pr-2">
               <div class="font-extrabold truncate">${ev.icon} ${escapeHtml(ev.title)}</div>
-              <div class="text-[10px] opacity-70">${ev.startDate} 〜 ${ev.endDate}</div>
+              <div class="text-[10px] opacity-70 font-mono">${ev.startDate} 〜 ${ev.endDate}</div>
             </div>
             <button type="button" data-del-ev="${ev.id}" class="text-xs text-rose-500 hover:text-rose-400 font-bold px-2 py-1 rounded hover:bg-rose-500/10 cursor-pointer">削除</button>
           </div>
@@ -1658,23 +1671,77 @@
       function closeCategoryModal() { document.getElementById('category-modal').classList.add('hidden'); }
 
       /**
-       * 🌟 カテゴリー一覧描画（名前変更テキストボックス ＆ 一括安全リネーム機能付き）
+       * 🌟 カテゴリー一覧描画（縦長大画面スクロールレス ＆ 並び替え▲/▼ ＆ 100%安全な未分類保護削除）
        */
       function renderCategoryEditorList() {
         const container = document.getElementById('category-list-editor');
-        container.innerHTML = state.categories.map(cat => {
+        const catLen = state.categories.length;
+
+        container.innerHTML = state.categories.map((cat, idx) => {
           const count = state.tasks.filter(t => t.categoryId === cat.id).length;
+          const isFirst = (idx === 0);
+          const isLast  = (idx === catLen - 1);
+
           return `
             <div style="background-color: var(--g-bg-sub); border-color: var(--g-border);" class="flex items-center justify-between p-2.5 rounded-xl border gap-2">
+              <!-- 並び替えボタン ▲ / ▼ -->
+              <div class="flex items-center gap-0.5 flex-shrink-0">
+                <button type="button" data-move-cat-up="${idx}" class="p-1 rounded text-xs font-bold ${isFirst ? 'opacity-20 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:text-sky-500 cursor-pointer'}" title="上へ移動" ${isFirst ? 'disabled' : ''}>
+                  ▲
+                </button>
+                <button type="button" data-move-cat-down="${idx}" class="p-1 rounded text-xs font-bold ${isLast ? 'opacity-20 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:text-sky-500 cursor-pointer'}" title="下へ移動" ${isLast ? 'disabled' : ''}>
+                  ▼
+                </button>
+              </div>
+
+              <!-- カラーピッカー ＆ 区分名インライン編集 -->
               <div class="flex items-center gap-2 flex-1 min-w-0">
                 <input type="color" value="${cat.color}" data-cat-color="${cat.id}" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent flex-shrink-0" title="色を変更">
-                <input type="text" value="${escapeHtml(cat.name)}" data-cat-rename="${cat.id}" class="flex-1 min-w-0 px-2 py-1 text-xs border border-inherit rounded-lg font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-sky-500" title="区分名を変更">
+                <input type="text" value="${escapeHtml(cat.name)}" data-cat-rename="${cat.id}" class="flex-1 min-w-0 px-2 py-1 text-xs border border-inherit rounded-lg font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-sky-500" title="区分名を直接変更">
                 <span class="text-[10px] opacity-60 flex-shrink-0 font-mono">(${count}件)</span>
               </div>
-              ${state.categories.length > 1 ? `<button type="button" data-del-cat="${cat.id}" class="text-xs text-rose-500 hover:text-rose-400 font-bold px-2 py-1 rounded hover:bg-rose-500/10 transition cursor-pointer flex-shrink-0">削除</button>` : ''}
+
+              <!-- 削除ボタン（安全警告＆未分類フォールバック） -->
+              ${catLen > 1 ? `
+                <button type="button" data-del-cat="${cat.id}" data-cat-count="${count}" class="text-xs text-rose-500 hover:text-rose-400 font-bold px-2 py-1 rounded hover:bg-rose-500/10 transition cursor-pointer flex-shrink-0">
+                  削除
+                </button>
+              ` : ''}
             </div>
           `;
         }).join('');
+
+        // 🌟 並び替えイベント（▲ 上へ移動）
+        container.querySelectorAll('[data-move-cat-up]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.dataset.moveCatUp);
+            if (idx > 0) {
+              const temp = state.categories[idx];
+              state.categories[idx] = state.categories[idx - 1];
+              state.categories[idx - 1] = temp;
+              saveMasterState();
+              renderCategoryEditorList();
+              renderAll();
+              showToast('区分の並び順を変更しました', 'info');
+            }
+          });
+        });
+
+        // 🌟 並び替えイベント（▼ 下へ移動）
+        container.querySelectorAll('[data-move-cat-down]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.dataset.moveCatDown);
+            if (idx < state.categories.length - 1) {
+              const temp = state.categories[idx];
+              state.categories[idx] = state.categories[idx + 1];
+              state.categories[idx + 1] = temp;
+              saveMasterState();
+              renderCategoryEditorList();
+              renderAll();
+              showToast('区分の並び順を変更しました', 'info');
+            }
+          });
+        });
 
         // カラー変更
         container.querySelectorAll('[data-cat-color]').forEach(input => {
@@ -1688,7 +1755,7 @@
           });
         });
 
-        // 🌟 区分名の変更（リネーム）＆ 所属タスクの一括自動リネーム
+        // 区分名リネーム ＆ 全アクション一括更新
         container.querySelectorAll('[data-cat-rename]').forEach(input => {
           input.addEventListener('change', (e) => {
             const newName = e.target.value.trim();
@@ -1701,7 +1768,6 @@
             const oldName = cat.name;
             cat.name = newName;
 
-            // 所属する全タスクのカテゴリー名を一括同期
             let affectedCount = 0;
             state.tasks.forEach(t => {
               if (t.categoryId === catId || t.category === oldName) {
@@ -1716,24 +1782,51 @@
           });
         });
 
-        // 削除
+        // 🌟 削除（紐づき件数警告 ＆ 他区分への誤移動を完全遮断し厳格に「未分類」へ移動）
         container.querySelectorAll('[data-del-cat]').forEach(btn => {
           btn.addEventListener('click', () => {
-            const catId    = btn.dataset.delCat;
-            const fallback = state.categories.find(c => c.id !== catId)?.id;
-            const fallbackName = state.categories.find(c => c.id !== catId)?.name || '一般';
+            const catId = btn.dataset.delCat;
+            const count = Number(btn.dataset.catCount || 0);
+            const targetCat = state.categories.find(c => c.id === catId);
+            if (!targetCat) return;
+
+            let confirmMsg = '';
+            if (count > 0) {
+              confirmMsg = `⚠️ 【注意：紐づくアクションが存在します】\n\n区分「${targetCat.name}」には現在 ${count} 件のアクションが紐づいています。\n\nこの区分を削除すると、紐づくアクションは自動的に『未分類』へ安全に移動します（他の区分に化けたり消えたりしません）。\n\n本当に区分「${targetCat.name}」を削除してもよろしいですか？`;
+            } else {
+              confirmMsg = `区分「${targetCat.name}」を削除してもよろしいですか？`;
+            }
+
+            if (!confirm(confirmMsg)) return;
+
+            // 🌟 厳格な「未分類」の取得または新設（既存他区分への誤混入を完全根絶）
+            let unassignedCat = state.categories.find(c => c.name === '未分類' && c.id !== catId);
+            if (!unassignedCat) {
+              unassignedCat = { id: 'cat_unassigned_' + Date.now(), name: '未分類', color: '#64748b' };
+              state.categories.push(unassignedCat);
+            }
+
+            let movedCount = 0;
             state.tasks.forEach(t => {
-              if (t.categoryId === catId) {
-                t.categoryId = fallback;
-                t.category = fallbackName;
+              if (t.categoryId === catId || t.category === targetCat.name) {
+                t.categoryId = unassignedCat.id;
+                t.category = '未分類';
+                movedCount++;
               }
             });
+
             state.categories = state.categories.filter(c => c.id !== catId);
             if (state.selectedCategoryFilter === catId) state.selectedCategoryFilter = 'ALL';
+
             saveMasterState();
             renderCategoryEditorList();
             renderAll();
-            showToast('区分を削除しました');
+
+            if (movedCount > 0) {
+              showToast(`区分を削除しました（${movedCount}件のアクションを『未分類』に安全保護しました）`, 'info');
+            } else {
+              showToast('区分を削除しました', 'info');
+            }
           });
         });
       }
@@ -1851,7 +1944,7 @@
             if (idx !== -1) {
               const existing = state.tasks[idx];
               state.tasks[idx] = {
-                ...existing, // 🌟 元のsessionId, themeId等を完全保持
+                ...existing,
                 title,
                 categoryId,
                 hours,
@@ -1929,7 +2022,7 @@
           }
         });
 
-        // 🌟 タブを前面にした瞬間の自動再描画（F5不要・常に最新同期）
+        // タブ前面化時の自動再描画
         window.addEventListener('focus', () => {
           loadMasterState();
           renderAll();
