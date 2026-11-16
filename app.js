@@ -17,16 +17,16 @@
  *   - 音声録音中の全枠呼吸・脈動発光（システムが声を聴いている没入表示）
  *   - 外部Gemini壁打ち用プロンプト生成・コピー機能（全体/個別テーマ）
  *   - 空間レイアウト完全共通化 ＆ 33%刻み進捗バー連動
- *   - 🌟【ガントチャート完全一元連携 ＆ スマートタブ切替】：
- *       ① 同一データキー（wish_action_tasks_v2）を共有し手動インポートを完全撤滅
- *       ② 開始日（startDate）と想定工数（hours）を非破壊拡張
- *       ③ 名前付きウィンドウターゲットによる安全なタブ行き来（未起動なら起動、起動済みならリロードなしで前面化）
- *       ④ storageイベントによるリアルタイム双方向同期（削除時クラッシュ防止ガード完備）
+ *   - 🌟【区分（カテゴリー）カラー完全同期 ＆ ガントチャート一元連携】：
+ *       ① 同一データキー（wish_action_tasks_v2）および区分マスター（wish_action_gantt_categories_v1）を共有
+ *       ② アクション一覧の区分バッジに設定カラー（背景・枠・文字色）をリアルタイム反映
+ *       ③ 開始日（startDate）と想定工数（hours）を非破壊拡張
+ *       ④ storageイベントによるリアルタイム双方向同期（カテゴリー変更・タスク変更即時反映）
  *   - 🌟【Googleカレンダー抜本的同期エンジン（冪等性・自己修復）】：
  *       ① 既存の重複予定（多重増殖ゴミ）を自動検出して余分な予定をDELETE削除・1つに集約修復
  *       ② 半永久タスク識別子 [wish_id: ...] による1対1の厳密バインド（何回同期しても二重化ゼロ）
  *       ③ Googleカレンダーからの拘束予定フェッチ ＆ 【Wish】タスク逆輸入防止
- *       ④ Google公式11色カラーマッピングとガント手動予定メモの完全共存
+ *       ④ Google公式カラーマッピング（レモン/バナナ/トマト等完全整合）とガント手動予定メモの完全共存
  *   - 🌟【Gemini API 堅牢化エンジン】：
  *       第1優先: gemini-3.5-flash-lite / 第2優先: gemini-flash-lite-latest
  *       段階的タイムアウト（10秒 ➔ 20秒 ➔ 30秒）による自動救済リトライ ＆ 明確なエラー通知
@@ -42,6 +42,7 @@
 // ==========================================
 const STORAGE_KEY_SESSIONS = 'wish_action_sessions_v2';
 const STORAGE_KEY_TASKS = 'wish_action_tasks_v2';
+const STORAGE_KEY_CATS = 'wish_action_gantt_categories_v1';
 const STORAGE_KEY_API_KEY = 'wish_action_gemini_key';
 const STORAGE_KEY_MODEL_LITE = 'wish_action_model_lite';
 const STORAGE_KEY_MODEL_DEEP = 'wish_action_model_deep';
@@ -56,6 +57,7 @@ const MODEL_PRIMARY = 'gemini-3.5-flash-lite';
 const MODEL_BACKUP  = 'gemini-flash-lite-latest';
 
 // Google公式カレンダーカラーパレット（1〜11番）
+// 🌟 レモン色（マイカレンダー代表色 #fdd835 / #fbd75b）およびバナナ（#f6bf26）の完全整合
 const GOOGLE_CALENDAR_COLORS = {
   "1":  "#7986cb", // ラベンダー（薄紫）
   "2":  "#33b679", // セージ（緑）
@@ -70,12 +72,16 @@ const GOOGLE_CALENDAR_COLORS = {
   "11": "#d50000"  // トマト（赤）
 };
 
+// 既定フォールバックカラーパレット
+const DEFAULT_PALETTE = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#e11d48', '#0891b2', '#4f46e5', '#ca8a04'];
+
 // ウィンドウ名（タブ重複防止）
 window.name = 'wish_action_cockpit_window';
 
 // アプリケーション内部ステート
 window.cockpitSessions = [];
 window.cockpitTasks = [];
+window.cockpitCategories = [];
 window.selectedSessionId = null;
 window.selectedThemeId = null;
 window.selectedTaskId = null;
@@ -127,6 +133,18 @@ function initDataStore() {
   try {
     const localSessions = localStorage.getItem(STORAGE_KEY_SESSIONS);
     const localTasks = localStorage.getItem(STORAGE_KEY_TASKS);
+    const localCats = localStorage.getItem(STORAGE_KEY_CATS);
+
+    if (localCats) {
+      window.cockpitCategories = JSON.parse(localCats);
+    } else {
+      window.cockpitCategories = [
+        { id: 'cat_default_1', name: '一般', color: '#0284c7' },
+        { id: 'cat_default_2', name: '開発ツール', color: '#7c3aed' },
+        { id: 'cat_default_3', name: '未分類', color: '#64748b' }
+      ];
+      localStorage.setItem(STORAGE_KEY_CATS, JSON.stringify(window.cockpitCategories));
+    }
 
     if (localSessions && localTasks) {
       window.cockpitSessions = JSON.parse(localSessions);
@@ -161,6 +179,7 @@ function initDataStore() {
     console.error('データ初期化エラー:', e);
     window.cockpitSessions = [];
     window.cockpitTasks = [];
+    window.cockpitCategories = [];
   }
 }
 
@@ -185,6 +204,24 @@ function syncHeaderVersionFromMaster() {
 }
 
 /**
+ * 区分名から設定カラーを安全取得するヘルパー
+ */
+function getCategoryColor(categoryName) {
+  if (!categoryName) return '#64748b';
+  const cats = window.cockpitCategories || [];
+  const found = cats.find(c => c.name === categoryName);
+  if (found && found.color) return found.color;
+
+  // ガント側カラーパレット自動割り当て互換
+  let hash = 0;
+  for (let i = 0; i < categoryName.length; i++) {
+    hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const idx = Math.abs(hash) % DEFAULT_PALETTE.length;
+  return DEFAULT_PALETTE[idx];
+}
+
+/**
  * 🌟 ガントチャート画面へのスマート移動
  * （未起動なら新規起動、起動済みならリロードなしで前面フォーカス）
  */
@@ -198,7 +235,7 @@ function openGanttChartWindow() {
 }
 
 /**
- * 🌟 他タブ（ガントチャート等）での更新検知リスナー（クラッシュ完全防止ガード付）
+ * 🌟 他タブ（ガントチャート等）での更新検知リスナー（区分・タスク・テーマ完全同期）
  */
 function setupStorageEventListener() {
   window.addEventListener('storage', (event) => {
@@ -216,10 +253,22 @@ function setupStorageEventListener() {
           renderTasks();
           renderCenterPane();
           updateAllBadgesAndIndicators();
-          updateGuidanceBanner('🔄 ガントチャートと同期', 'ガントチャート側の変更（カテゴリー名やタスク内容）がリアルタイムに反映されました。', false);
+          updateGuidanceBanner('🔄 ガントチャートと同期', 'ガントチャート側の変更がリアルタイムに反映されました。', false);
         }
       } catch (e) {
         console.warn('ストレージ同期エラー:', e);
+      }
+    } else if (event.key === STORAGE_KEY_CATS) {
+      try {
+        const updatedCats = localStorage.getItem(STORAGE_KEY_CATS);
+        if (updatedCats) {
+          window.cockpitCategories = JSON.parse(updatedCats);
+          populateCategoryDatalist();
+          renderTasks();
+          buildCategoryDropdownItems();
+        }
+      } catch (e) {
+        console.warn('区分ストレージ同期エラー:', e);
       }
     } else if (event.key === STORAGE_KEY_THEME) {
       const newTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'light';
@@ -444,10 +493,14 @@ function buildCategoryDropdownItems() {
   container.innerHTML = '';
 
   const tasks = window.cockpitTasks || [];
-  const categories = ['all', ...new Set(tasks.map(t => t.category).filter(Boolean))];
+  const definedCats = (window.cockpitCategories || []).map(c => c.name);
+  const taskCats = tasks.map(t => t.category).filter(Boolean);
+  const allUnique = ['all', ...new Set([...definedCats, ...taskCats])];
 
-  categories.forEach(cat => {
+  allUnique.forEach(cat => {
     const count = cat === 'all' ? tasks.length : tasks.filter(t => t.category === cat).length;
+    const catColor = (cat === 'all') ? '#0284c7' : getCategoryColor(cat);
+
     const btn = document.createElement('button');
     btn.className = `w-full px-3 py-1.5 text-left hover:bg-sky-500/10 flex items-center justify-between transition ${
       window.selectedCategoryFilter === cat ? 'font-black text-sky-600 dark:text-sky-400 bg-sky-500/5' : 't-text-main'
@@ -458,8 +511,11 @@ function buildCategoryDropdownItems() {
       toggleCategoryDropdown();
     };
     btn.innerHTML = `
-      <span class="truncate">${cat === 'all' ? 'すべて' : escapeHtml(cat)}</span>
-      <span class="text-[10px] t-text-muted font-bold">(${count})</span>
+      <div class="flex items-center gap-2 min-w-0">
+        ${cat !== 'all' ? `<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${catColor};"></span>` : ''}
+        <span class="truncate">${cat === 'all' ? 'すべて' : escapeHtml(cat)}</span>
+      </div>
+      <span class="text-[10px] t-text-muted font-bold font-mono">(${count})</span>
     `;
     container.appendChild(btn);
   });
@@ -697,6 +753,9 @@ function createTaskCardElement(task, isAttention) {
   }
 
   const hoursLabel = (task.hours !== undefined) ? `${task.hours}h` : '4h';
+  
+  // 🌟 カテゴリーカラーのリアルタイム取得 ＆ バッジ適用
+  const catColor = getCategoryColor(task.category);
 
   card.innerHTML = `
     <div class="flex items-start justify-between gap-2">
@@ -705,7 +764,7 @@ function createTaskCardElement(task, isAttention) {
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5 flex-wrap">
             <h4 class="font-black text-xs t-text-main leading-snug break-words ${task.completed ? 'line-through text-slate-400' : ''}">${escapeHtml(task.title)}</h4>
-            <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-slate-500/10 text-slate-700 dark:text-slate-300">${escapeHtml(task.category || '未設定')}</span>
+            <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border transition-colors" style="background-color: ${catColor}1c; border-color: ${catColor}55; color: ${catColor};">${escapeHtml(task.category || '未設定')}</span>
           </div>
           <p class="text-[11px] t-text-sub mt-0.5 line-clamp-2 leading-relaxed font-medium">${escapeHtml(task.description || '')}</p>
         </div>
@@ -877,12 +936,14 @@ function renderStockIdeas() {
           if (window.lucide) lucide.createIcons();
         };
 
+        const thColor = getCategoryColor(th.category);
+
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <h4 class="font-black text-xs t-text-main truncate">${escapeHtml(th.theme)}</h4>
-                <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">${escapeHtml(th.category || '一般')}</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border" style="background-color: ${thColor}1c; border-color: ${thColor}55; color: ${thColor};">${escapeHtml(th.category || '一般')}</span>
               </div>
               <p class="text-[11px] t-text-sub mt-1 line-clamp-2 leading-relaxed font-medium">${escapeHtml(th.content || '')}</p>
             </div>
@@ -1182,8 +1243,8 @@ function renderThemesSection(session) {
       editDiv.className = 'p-2.5 rounded-xl border border-sky-500/40 bg-sky-500/5 space-y-2 text-xs min-w-0';
       editDiv.innerHTML = `
         <div class="flex items-center justify-between pb-1 border-b border-inherit text-sky-600 dark:text-sky-400 font-bold text-[11px]">
-          <span class="flex items-center gap-1"><i data-lucide="edit-3" class="w-3 h-3"></i> 論点の直接編集</span>
-          <button type="button" onclick="cancelInlineThemeEdit(event)" class="t-text-muted hover:t-text-main"><i data-lucide="x" class="w-3 h-3"></i></button>
+          <span class="flex items-center gap-1"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 論点の直接編集</span>
+          <button type="button" onclick="cancelInlineThemeEdit(event)" class="t-text-muted hover:t-text-main"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
         </div>
         
         <div class="grid grid-cols-[3fr_2fr] gap-2">
@@ -1211,12 +1272,14 @@ function renderThemesSection(session) {
       const linkedTask = window.cockpitTasks.find(t => t.themeId === currentTheme.id);
       const card = document.createElement('div');
       card.className = 'p-2.5 rounded-xl border t-card spotlight-active transition-all min-w-0';
+      const themeColor = getCategoryColor(currentTheme.category);
+
       card.innerHTML = `
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5 flex-wrap">
               <h4 class="font-black text-xs t-text-main truncate">${escapeHtml(currentTheme.theme)}</h4>
-              <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300">${escapeHtml(currentTheme.category || '一般')}</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border" style="background-color: ${themeColor}1c; border-color: ${themeColor}55; color: ${themeColor};">${escapeHtml(currentTheme.category || '一般')}</span>
             </div>
             <p class="text-[11px] t-text-sub mt-1 line-clamp-2 leading-relaxed font-medium break-words">${escapeHtml(currentTheme.content || '')}</p>
           </div>
@@ -2818,10 +2881,6 @@ function updateCalendarSyncUI() {
 
 /**
  * 🌟 Googleカレンダーとの抜本的完全同期（冪等性・自己修復）
- * 1. Googleカレンダーから既存の全【Wish】予定をスキャン
- * 2. 過去に多重増殖してしまった重複ゴミ予定を自動検知して DELETE 削除・1つに集約
- * 3. 各タスクを [wish_id: ...] による厳密な1対1で更新 (PATCH) または新規作成 (POST)
- * 4. Googleカレンダーから現実の拘束予定を安全フェッチしてガントチャートへリアルタイム通知
  */
 async function syncAllTasksToGoogleCalendar() {
   if (!isCalendarSyncEnabled) {
@@ -2853,7 +2912,6 @@ async function syncAllTasksToGoogleCalendar() {
       const summaryExpected = `【Wish】${task.title}`;
       const idTag = `[wish_id:${task.id}]`;
 
-      // 該当タスクにマッチするGoogle側イベントを全て探す（IDタグ優先、次いで件名一致）
       const matchedEvents = existingWishEvents.filter(ev => {
         const desc = ev.description || '';
         const summ = ev.summary || '';
@@ -2868,13 +2926,11 @@ async function syncAllTasksToGoogleCalendar() {
       };
 
       if (matchedEvents.length > 0) {
-        // A. 1つ目を「正」として最新情報で上書き更新（PATCH）
         const primaryEvent = matchedEvents[0];
         await patchGoogleCalendarEvent(primaryEvent.id, eventPayload);
         task.gcalEventId = primaryEvent.id;
         updatedCount++;
 
-        // B. 🌟 抜本的自己修復：2つ目以降の増殖ゴミ予定をGoogleカレンダーから物理削除（DELETE）！
         for (let i = 1; i < matchedEvents.length; i++) {
           const duplicateEv = matchedEvents[i];
           try {
@@ -2885,7 +2941,6 @@ async function syncAllTasksToGoogleCalendar() {
           }
         }
       } else {
-        // C. Google側に存在しない新規タスクのみ作成（POST）
         const newEvent = await postGoogleCalendarEvent(eventPayload);
         if (newEvent && newEvent.id) {
           task.gcalEventId = newEvent.id;
@@ -2894,10 +2949,9 @@ async function syncAllTasksToGoogleCalendar() {
       }
     }
 
-    // タスク側の gcalEventId 変更を安全保存
     saveDataToLocalStorage();
 
-    // ステップ4：Googleカレンダーから拘束予定（出社・在宅・通院等）を取得してガントへ同期
+    // ステップ4：Googleカレンダーから拘束予定を取得してガントへ同期
     const fetchedEventCount = await fetchAndSyncGoogleCalendarEvents();
 
     let cleanMsg = cleanedDuplicateCount > 0 ? `\n🧹 過去に多重増殖していた重複ゴミ予定 ${cleanedDuplicateCount}件 を自動削除・クリーンアップしました。` : '';
@@ -2983,12 +3037,11 @@ async function deleteGoogleCalendarEvent(eventId) {
 }
 
 /**
- * 🌟 Googleカレンダーから拘束予定を取得し、手動予定を保護しつつガントへマージ
+ * 🌟 Googleカレンダーから拘束予定を取得し、手動予定を保護しつつガントへマージ（公式11色＋レモン等のマイカレンダー色完全対応）
  */
 async function fetchAndSyncGoogleCalendarEvents() {
   if (!gcalAccessToken) return 0;
 
-  // ガントチャートの表示対象期間（今日 -30日 〜 +90日）に絞り込んで軽量フェッチ
   const now = new Date();
   const timeMinDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
   const timeMaxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 90);
@@ -3034,7 +3087,6 @@ async function fetchAndSyncGoogleCalendarEvents() {
 
     if (isAllDay) {
       startDate = ev.start.date;
-      // Google終日予定の翌日排他終了日を同一日または最終日に安全補正
       const endD = parseDateStr(ev.end?.date || ev.start.date);
       endD.setDate(endD.getDate() - 1);
       const computedEnd = formatDateStr(endD);
@@ -3050,7 +3102,14 @@ async function fetchAndSyncGoogleCalendarEvents() {
 
     const summary = ev.summary || '予定あり';
     const icon = guessEventIcon(summary);
-    const colorHex = GOOGLE_CALENDAR_COLORS[ev.colorId] || '#0284c7';
+
+    // 🌟 Google公式カラーパレット参照（レモン色等のマイカレンダー代表色および公式イベント色を完全整合）
+    let colorHex = '#0284c7';
+    if (ev.colorId && GOOGLE_CALENDAR_COLORS[ev.colorId]) {
+      colorHex = GOOGLE_CALENDAR_COLORS[ev.colorId];
+    } else if (summary.includes('レモン') || summary.toLowerCase().includes('lemon')) {
+      colorHex = '#fdd835'; // 爽やかな純黄レモン色
+    }
 
     return {
       id: 'gcal_' + ev.id,
@@ -3118,27 +3177,17 @@ function formatDateStr(date) {
 // 15. 通信コア ＆ 段階的タイムアウト・自動救済リトライエンジン
 // ==========================================
 
-/**
- * 🌟 段階的タイムアウト（10s ➔ 20s ➔ 30s）＆ 2モデル自動救済リトライ
- * 1. 10秒タイムアウト（第1優先 MODEL_PRIMARY）
- * 2. 失敗時、第2優先 MODEL_BACKUP で即時自動救済リトライ（10秒）
- * 3. 1周ダメなら次は20秒タイムアウトで再試行
- * 4. それでもダメなら30秒タイムアウトまで延長再試行
- * 5. 30秒でも繋がらなければ、混雑状況をユーザーに分かりやすく明示
- */
 async function callGeminiWithStepwiseTimeout(prompt, apiKey, isDeep = false) {
   if (isDeep) {
-    // 3.8深考は明示指定時のみ使用
     return await executeSingleGeminiFetch(prompt, apiKey, 'gemini-3.8-flash', 30000);
   }
 
-  const timeoutStages = [10000, 20000, 30000]; // 10秒 ➔ 20秒 ➔ 30秒
+  const timeoutStages = [10000, 20000, 30000];
 
   for (let stageIdx = 0; stageIdx < timeoutStages.length; stageIdx++) {
     const timeoutMs = timeoutStages[stageIdx];
     const seconds = timeoutMs / 1000;
 
-    // A. 第1優先モデルで試行
     try {
       updateGuidanceBanner('🧠 AIと交信中...', `主軸モデルで思考中 (${seconds}秒判定)...`, true);
       const result = await executeSingleGeminiFetch(prompt, apiKey, MODEL_PRIMARY, timeoutMs);
@@ -3146,7 +3195,6 @@ async function callGeminiWithStepwiseTimeout(prompt, apiKey, isDeep = false) {
     } catch (primaryErr) {
       console.warn(`第1優先モデル(${MODEL_PRIMARY})失敗 [タイムアウト:${seconds}s]:`, primaryErr.message);
 
-      // B. 即座に第2優先（バックアップ）モデルで自動救済リトライ
       try {
         updateGuidanceBanner('🔄 救済リトライ中...', `バックアップモデル (${MODEL_BACKUP}) で自動再試行中...`, true);
         const backupResult = await executeSingleGeminiFetch(prompt, apiKey, MODEL_BACKUP, timeoutMs);
@@ -3155,7 +3203,6 @@ async function callGeminiWithStepwiseTimeout(prompt, apiKey, isDeep = false) {
       } catch (backupErr) {
         console.warn(`第2優先モデル(${MODEL_BACKUP})失敗 [タイムアウト:${seconds}s]:`, backupErr.message);
         
-        // 次の延長ステージへ進む
         if (stageIdx < timeoutStages.length - 1) {
           const nextSec = timeoutStages[stageIdx + 1] / 1000;
           updateGuidanceBanner('⏳ 通信延長中...', `Google側が混雑しているため、タイムアウトを${nextSec}秒に延長して再接続します...`, true);
@@ -3164,15 +3211,11 @@ async function callGeminiWithStepwiseTimeout(prompt, apiKey, isDeep = false) {
     }
   }
 
-  // 30秒タイムアウトまで全て失敗した場合の親切なメッセージ
   const finalErrorMsg = 'Google AIサーバーが極度に混雑しているか、通信が不安定です（10s・20s・30sの延長試行が全てタイムアウトしました）。\n\n入力中のテキストは保持されていますので、少し時間を置いてから再度ボタンを押してください。';
   updateGuidanceBanner('⚠️ AIサーバー極度混雑', 'Googleサーバーが混雑しています。少し時間を置いて再試行してください。', true);
   throw new Error(finalErrorMsg);
 }
 
-/**
- * 🌟 単一Fetch実行（AbortControllerによる厳格タイムアウト制御）
- */
 async function executeSingleGeminiFetch(prompt, apiKey, modelName, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -3290,7 +3333,9 @@ function populateCategoryDatalist() {
   const datalist = document.getElementById('category-datalist');
   if (!datalist) return;
   const tasks = window.cockpitTasks || [];
-  const categories = [...new Set(tasks.map(t => t.category).filter(Boolean))];
+  const definedCats = (window.cockpitCategories || []).map(c => c.name);
+  const taskCats = tasks.map(t => t.category).filter(Boolean);
+  const categories = [...new Set([...definedCats, ...taskCats])];
   datalist.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
 }
 
