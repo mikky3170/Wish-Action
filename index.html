@@ -16,7 +16,7 @@
   <!-- Google Identity Services (OAuth2 Token Client) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- 1. バージョン定義マスタ（独立外部ファイル） -->
+  <!-- 1. バージョン定義マスタ（独立外部ファイル・代表ファイル） -->
   <script src="version.js"></script>
 
   <!-- 2. コックピット動的プログラム本体（安全分離） -->
@@ -337,7 +337,8 @@
           <h1 class="text-xs font-black tracking-tight t-text-main flex items-center gap-1.5">
             <span>Wish & Action コックピット</span>
             <button onclick="openVersionModal()" id="version-tag" class="font-mono text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 hover:opacity-80 transition flex items-center gap-0.5 shadow-sm border border-sky-500/20 cursor-pointer" title="クリックでバージョン更新履歴を表示">
-              <span id="header-version-label">v1.1.0</span>
+              <!-- 代表ファイル version.js より動的初期化 -->
+              <span id="header-version-label">--</span>
               <i data-lucide="history" class="w-2 h-2"></i>
             </button>
           </h1>
@@ -1475,16 +1476,19 @@
     </div>
   </div>
 
-  <!-- 🌟 システム全体の完全バックアップ保存（エクスポート） -->
+  <!-- 🌟 システム全体の完全バックアップ保存（代表ファイルversion.js動的参照） -->
   <script>
     function exportCurrentDataToJson() {
       try {
         const sessions = window.cockpitSessions || [];
         const tasks = window.cockpitTasks || [];
         
+        // 代表ファイル version.js からの動的取得（固定文字を完全排除）
+        const activeVer = (window.COCKPIT_VERSION_DATA && window.COCKPIT_VERSION_DATA.currentVersion) ? window.COCKPIT_VERSION_DATA.currentVersion : 'V.1.1.1';
+
         const exportPayload = {
           exportTimestamp: new Date().toISOString(),
-          version: 'v1.1.0',
+          version: activeVer,
           source: 'Wish & Action Cockpit Backup',
           sessions: sessions,
           tasks: tasks
@@ -1509,7 +1513,7 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        alert('💾 現在の全データをバックアップファイルとしてPCに保存しました。\n\nファイル名: wish_action_backup_' + dateStr + '.json');
+        alert('💾 現在の全データをバックアップファイルとしてPCに保存しました。\n\nバージョン: ' + activeVer + '\nファイル名: wish_action_backup_' + dateStr + '.json');
       } catch (e) {
         console.error('バックアップ失敗:', e);
         alert('バックアップの保存に失敗しました: ' + e.message);
